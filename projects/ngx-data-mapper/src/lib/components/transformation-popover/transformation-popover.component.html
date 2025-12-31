@@ -1,0 +1,196 @@
+<div class="transformation-popover" [ngStyle]="getPopoverStyle()">
+  <div class="popover-arrow"></div>
+
+  <div class="popover-header">
+    <span class="popover-title">Transformation</span>
+    <button mat-icon-button class="close-btn" (click)="onClose()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div class="popover-content">
+    <!-- Source/Target Info -->
+    <div class="mapping-info">
+      <div class="info-row">
+        <span class="info-label">Source:</span>
+        <span class="info-value">{{ getSourceFieldNames() }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Target:</span>
+        <span class="info-value">{{ mapping.targetField.name }}</span>
+      </div>
+    </div>
+
+    <!-- Transformation Type -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Transformation Type</mat-label>
+      <mat-select [(ngModel)]="transformationType" (selectionChange)="onTypeChange()">
+        @for (t of availableTransformations; track t.type) {
+          <mat-option [value]="t.type">{{ t.label }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <!-- Type-specific options -->
+    @switch (transformationType) {
+      @case ('concat') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Template</mat-label>
+            <input
+              matInput
+              [(ngModel)]="config.template"
+              (ngModelChange)="onConfigChange()"
+              placeholder="{field1} - {field2}"
+            />
+            <mat-hint>Use curly braces around fieldName for values</mat-hint>
+          </mat-form-field>
+        </div>
+      }
+
+      @case ('substring') {
+        <div class="config-section config-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Start Index</mat-label>
+            <input
+              matInput
+              type="number"
+              [(ngModel)]="config.startIndex"
+              (ngModelChange)="onConfigChange()"
+              min="0"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline">
+            <mat-label>End Index</mat-label>
+            <input
+              matInput
+              type="number"
+              [(ngModel)]="config.endIndex"
+              (ngModelChange)="onConfigChange()"
+            />
+          </mat-form-field>
+        </div>
+      }
+
+      @case ('replace') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Search For</mat-label>
+            <input
+              matInput
+              [(ngModel)]="config.searchValue"
+              (ngModelChange)="onConfigChange()"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Replace With</mat-label>
+            <input
+              matInput
+              [(ngModel)]="config.replaceValue"
+              (ngModelChange)="onConfigChange()"
+            />
+          </mat-form-field>
+        </div>
+      }
+
+      @case ('dateFormat') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Output Format</mat-label>
+            <input
+              matInput
+              [(ngModel)]="config.outputFormat"
+              (ngModelChange)="onConfigChange()"
+              placeholder="YYYY-MM-DD"
+            />
+            <mat-hint>YYYY, MM, DD, HH, mm, ss</mat-hint>
+          </mat-form-field>
+        </div>
+      }
+
+      @case ('numberFormat') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Decimal Places</mat-label>
+            <input
+              matInput
+              type="number"
+              [(ngModel)]="config.decimalPlaces"
+              (ngModelChange)="onConfigChange()"
+              min="0"
+            />
+          </mat-form-field>
+          <div class="config-row">
+            <mat-form-field appearance="outline">
+              <mat-label>Prefix</mat-label>
+              <input
+                matInput
+                [(ngModel)]="config.prefix"
+                (ngModelChange)="onConfigChange()"
+                placeholder="$"
+              />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Suffix</mat-label>
+              <input
+                matInput
+                [(ngModel)]="config.suffix"
+                (ngModelChange)="onConfigChange()"
+              />
+            </mat-form-field>
+          </div>
+        </div>
+      }
+
+      @case ('template') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Template Expression</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="config.template"
+              (ngModelChange)="onConfigChange()"
+              rows="3"
+              placeholder="Hello {firstName}, your ID is {id}"
+            ></textarea>
+          </mat-form-field>
+        </div>
+      }
+
+      @case ('custom') {
+        <div class="config-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>JavaScript Expression</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="config.expression"
+              (ngModelChange)="onConfigChange()"
+              rows="3"
+              placeholder="fieldName.toUpperCase()"
+            ></textarea>
+            <mat-hint>Use field names as variables</mat-hint>
+          </mat-form-field>
+        </div>
+      }
+    }
+
+    <!-- Preview Section -->
+    <div class="preview-section">
+      <span class="preview-label">Preview:</span>
+      <div class="preview-value">{{ preview || '(empty)' }}</div>
+    </div>
+  </div>
+
+  <div class="popover-actions">
+    <button mat-button color="warn" (click)="onDelete()" matTooltip="Remove this mapping">
+      <mat-icon>delete</mat-icon>
+      Delete
+    </button>
+    <div class="action-spacer"></div>
+    <button mat-button (click)="onClose()">Cancel</button>
+    <button mat-flat-button color="primary" (click)="onSave()">Apply</button>
+  </div>
+</div>
+
+<!-- Backdrop -->
+<div class="popover-backdrop" (click)="onClose()"></div>

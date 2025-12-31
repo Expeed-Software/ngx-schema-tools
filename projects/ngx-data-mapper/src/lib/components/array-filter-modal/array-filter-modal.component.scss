@@ -1,0 +1,352 @@
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.filter-modal {
+  position: relative;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  width: 600px;
+  max-width: 100%;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  flex-shrink: 0;
+
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .array-path {
+    flex: 1;
+    font-size: 13px;
+    opacity: 0.9;
+    text-align: right;
+    margin-right: 8px;
+  }
+
+  .close-btn {
+    color: white;
+    opacity: 0.9;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  min-height: 0;
+}
+
+.filter-mode {
+  mat-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .mode-option {
+    ::ng-deep .mdc-form-field {
+      align-items: flex-start;
+    }
+
+    ::ng-deep .mdc-radio {
+      margin-top: 4px;
+    }
+  }
+
+  .mode-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+    }
+
+    mat-icon {
+      color: #64748b;
+      margin-top: 2px;
+    }
+  }
+
+  .mode-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .mode-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  .mode-desc {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  mat-radio-button.mat-mdc-radio-checked {
+    .mode-content {
+      background: #fffbeb;
+      border-color: #f59e0b;
+
+      mat-icon {
+        color: #f59e0b;
+      }
+    }
+  }
+}
+
+mat-divider {
+  margin: 20px 0;
+}
+
+.conditions-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// Group styles
+.filter-group {
+  border-radius: 8px;
+
+  &.root-group {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 16px;
+  }
+
+  &.nested-group {
+    background: white;
+    border: 2px dashed #cbd5e1;
+    padding: 12px;
+    margin-top: 8px;
+  }
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.logic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .logic-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #475569;
+  }
+
+  mat-radio-group {
+    display: flex;
+    gap: 12px;
+  }
+
+  mat-radio-button {
+    font-size: 12px;
+
+    ::ng-deep .mdc-label {
+      font-size: 12px;
+    }
+  }
+}
+
+.remove-group-btn {
+  color: #94a3b8;
+
+  &:hover {
+    color: #ef4444;
+  }
+}
+
+.group-children {
+  display: flex;
+  flex-direction: column;
+}
+
+.logic-connector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+
+  .logic-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    letter-spacing: 0.5px;
+
+    &.and {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    &.or {
+      background: #fef3c7;
+      color: #b45309;
+    }
+  }
+}
+
+.condition-row {
+  .condition-inputs {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+
+    .field-select {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .operator-select {
+      flex: 1;
+      min-width: 130px;
+    }
+
+    .value-input {
+      flex: 1;
+      min-width: 100px;
+    }
+
+    .bool-toggle {
+      padding-top: 12px;
+      min-width: 80px;
+    }
+
+    .remove-btn {
+      color: #94a3b8;
+      align-self: center;
+
+      &:hover {
+        color: #ef4444;
+      }
+    }
+
+    mat-form-field {
+      ::ng-deep .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+    }
+  }
+}
+
+.nested-group .condition-row .condition-inputs {
+  background: #f8fafc;
+}
+
+.field-type {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
+.empty-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: #fef3c7;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 13px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.group-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.add-condition-btn {
+  color: #f59e0b;
+  border-color: #f59e0b;
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.add-group-btn {
+  color: #6366f1;
+  border-color: #6366f1;
+  font-size: 12px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  flex-shrink: 0;
+}

@@ -1,0 +1,176 @@
+<div class="data-mapper">
+  <!-- Header Toolbar -->
+  <div class="mapper-toolbar">
+    <div class="toolbar-title">
+      <mat-icon>account_tree</mat-icon>
+      <span>Data Mapper</span>
+    </div>
+    <div class="toolbar-actions">
+      <span class="mapping-count">{{ mappings().length }} mapping(s)</span>
+      <button
+        mat-icon-button
+        matTooltip="Clear all mappings"
+        (click)="clearAllMappings()"
+        [disabled]="mappings().length === 0"
+      >
+        <mat-icon>delete_sweep</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Mapper Area -->
+  <div class="mapper-container" #svgContainer>
+    <!-- Source Schema Panel -->
+    <div class="schema-panel source-panel">
+      <schema-tree
+        [schema]="sourceSchema"
+        [side]="'source'"
+        [mappings]="mappings()"
+        (fieldDragStart)="onFieldDragStart($event)"
+        (fieldPositionsChanged)="onSourcePositionsChanged($event)"
+      ></schema-tree>
+    </div>
+
+    <!-- SVG Connection Layer -->
+    <svg class="connection-layer" #svgElement>
+      <!-- Existing connections -->
+      @for (connection of connections(); track trackByConnectionId($index, connection)) {
+        <g class="connection-group" [class.selected]="connection.isSelected" [class.array-mapping]="connection.isArrayMapping" [class.array-to-object-mapping]="connection.isArrayToObjectMapping">
+          <!-- Connection paths -->
+          @for (path of connection.paths; track $index) {
+            <!-- Shadow path for glow effect -->
+            <path
+              [attr.d]="path"
+              fill="none"
+              [attr.stroke]="connection.isArrayToObjectMapping ? '#8b5cf6' : (connection.isArrayMapping ? '#f59e0b' : (connection.isSelected ? '#8b5cf6' : '#6366f1'))"
+              stroke-width="6"
+              stroke-opacity="0.2"
+              stroke-linecap="round"
+            />
+            <!-- Main connection path -->
+            <path
+              [attr.d]="path"
+              class="connection-path"
+              [class.selected]="connection.isSelected"
+              [class.array-path]="connection.isArrayMapping"
+              [class.array-to-object-path]="connection.isArrayToObjectMapping"
+              [attr.stroke]="connection.isArrayToObjectMapping ? '#8b5cf6' : (connection.isArrayMapping ? '#f59e0b' : (connection.isSelected ? '#8b5cf6' : '#6366f1'))"
+              fill="none"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              [attr.stroke-dasharray]="connection.isArrayMapping || connection.isArrayToObjectMapping ? '8,4' : 'none'"
+              (click)="onConnectionClick(connection, $event)"
+            />
+            <!-- Invisible wider path for easier clicking -->
+            <path
+              [attr.d]="path"
+              class="connection-hitbox"
+              fill="none"
+              stroke="transparent"
+              stroke-width="20"
+              (click)="onConnectionClick(connection, $event)"
+            />
+          }
+
+          <!-- Transformation node -->
+          <g
+            class="transformation-node"
+            [class.has-transformation]="connection.hasTransformation"
+            [class.is-array-mapping]="connection.isArrayMapping"
+            [class.is-array-to-object-mapping]="connection.isArrayToObjectMapping"
+            [attr.transform]="'translate(' + connection.midPoint.x + ',' + connection.midPoint.y + ')'"
+            (click)="onTransformationNodeClick(connection, $event)"
+          >
+            <circle r="14" class="node-bg" [attr.fill]="connection.isArrayToObjectMapping ? '#8b5cf6' : (connection.isArrayMapping ? '#f59e0b' : '')" [attr.stroke]="connection.isArrayToObjectMapping ? '#8b5cf6' : (connection.isArrayMapping ? '#f59e0b' : '')" />
+            <text
+              class="node-icon"
+              text-anchor="middle"
+              dominant-baseline="central"
+              font-family="Material Icons"
+              font-size="16"
+              [attr.fill]="connection.isArrayMapping || connection.isArrayToObjectMapping ? 'white' : ''"
+            >
+              {{ getTransformationIcon(connection.mappingId) }}
+            </text>
+          </g>
+        </g>
+      }
+
+      <!-- Drag preview path -->
+      @if (dragPath()) {
+        <path
+          [attr.d]="dragPath()"
+          class="drag-path"
+          fill="none"
+          stroke="#6366f1"
+          stroke-width="2.5"
+          stroke-dasharray="8,4"
+          stroke-linecap="round"
+        />
+      }
+    </svg>
+
+    <!-- Target Schema Panel -->
+    <div class="schema-panel target-panel">
+      <schema-tree
+        [schema]="targetSchema"
+        [side]="'target'"
+        [mappings]="mappings()"
+        [defaultValues]="defaultValues()"
+        (fieldDrop)="onFieldDrop($event)"
+        (fieldPositionsChanged)="onTargetPositionsChanged($event)"
+        (fieldDefaultValueClick)="onDefaultValueClick($event)"
+      ></schema-tree>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  @if (mappings().length === 0) {
+    <div class="empty-state">
+      <mat-icon>drag_indicator</mat-icon>
+      <p>Drag fields from the source schema to the target schema to create mappings</p>
+    </div>
+  }
+</div>
+
+<!-- Transformation Popover -->
+@if (showPopover() && selectedMapping()) {
+  <transformation-popover
+    [mapping]="selectedMapping()!"
+    [position]="popoverPosition()!"
+    [sampleData]="sampleData"
+    (save)="onPopoverSave($event)"
+    (delete)="onPopoverDelete()"
+    (close)="closePopover()"
+  ></transformation-popover>
+}
+
+<!-- Array Filter Modal -->
+@if (showArrayFilterModal() && selectedArrayMapping()) {
+  <array-filter-modal
+    [arrayMapping]="selectedArrayMapping()!"
+    (save)="onArrayFilterSave($event)"
+    (close)="closeArrayFilterModal()"
+  ></array-filter-modal>
+}
+
+<!-- Array Selector Modal (for array-to-object) -->
+@if (showArraySelectorModal() && selectedArrayToObjectMapping()) {
+  <array-selector-modal
+    [mapping]="selectedArrayToObjectMapping()!"
+    (save)="onArraySelectorSave($event)"
+    (close)="closeArraySelectorModal()"
+  ></array-selector-modal>
+}
+
+<!-- Default Value Popover -->
+@if (showDefaultValuePopover() && selectedDefaultValueField()) {
+  <default-value-popover
+    [field]="selectedDefaultValueField()!"
+    [existingValue]="getExistingDefaultValue(selectedDefaultValueField()!.id)"
+    [position]="defaultValuePopoverPosition()!"
+    (save)="onDefaultValueSave($event)"
+    (delete)="onDefaultValueDelete()"
+    (close)="closeDefaultValuePopover()"
+  ></default-value-popover>
+}

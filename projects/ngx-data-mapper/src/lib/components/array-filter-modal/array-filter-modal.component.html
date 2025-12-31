@@ -1,0 +1,183 @@
+<div class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="filter-modal">
+    <div class="modal-header">
+      <div class="header-title">
+        <mat-icon>filter_list</mat-icon>
+        <span>Array Filter</span>
+      </div>
+      <span class="array-path">{{ arrayMapping.sourceArray.name }}[] &rarr; {{ arrayMapping.targetArray.name }}[]</span>
+      <button mat-icon-button class="close-btn" (click)="onClose()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Filter mode selection -->
+      <div class="filter-mode">
+        <mat-radio-group [value]="filterEnabled()" (change)="filterEnabled.set($event.value)">
+          <mat-radio-button [value]="false" class="mode-option">
+            <div class="mode-content">
+              <mat-icon>select_all</mat-icon>
+              <div class="mode-text">
+                <span class="mode-label">No filter</span>
+                <span class="mode-desc">Map all records from source to target</span>
+              </div>
+            </div>
+          </mat-radio-button>
+          <mat-radio-button [value]="true" class="mode-option">
+            <div class="mode-content">
+              <mat-icon>filter_alt</mat-icon>
+              <div class="mode-text">
+                <span class="mode-label">Filter records</span>
+                <span class="mode-desc">Only map records matching conditions</span>
+              </div>
+            </div>
+          </mat-radio-button>
+        </mat-radio-group>
+      </div>
+
+      <!-- Conditions builder (only when filter enabled) -->
+      @if (filterEnabled()) {
+        <mat-divider></mat-divider>
+
+        <div class="conditions-section">
+          <!-- Root group -->
+          <ng-container *ngTemplateOutlet="groupTemplate; context: { group: rootGroup(), isRoot: true }"></ng-container>
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button mat-button (click)="onClose()">Cancel</button>
+      <button mat-flat-button color="primary" (click)="onSave()">
+        Apply
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Recursive group template -->
+<ng-template #groupTemplate let-group="group" let-isRoot="isRoot" let-parentGroup="parentGroup">
+  <div class="filter-group" [class.root-group]="isRoot" [class.nested-group]="!isRoot">
+    <!-- Group header with logic toggle -->
+    <div class="group-header">
+      <div class="logic-toggle">
+        <span class="logic-label">Match</span>
+        <mat-radio-group [value]="group.logic" (change)="onLogicChange(group, $event.value)">
+          <mat-radio-button value="and">ALL (AND)</mat-radio-button>
+          <mat-radio-button value="or">ANY (OR)</mat-radio-button>
+        </mat-radio-group>
+      </div>
+      @if (!isRoot) {
+        <button mat-icon-button class="remove-group-btn" matTooltip="Remove group" (click)="removeItem(parentGroup, group.id)">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+
+    <!-- Group children -->
+    <div class="group-children">
+      @for (item of group.children; track item.id; let i = $index) {
+        <!-- Logic connector between items -->
+        @if (i > 0) {
+          <div class="logic-connector">
+            <span class="logic-badge" [class.and]="group.logic === 'and'" [class.or]="group.logic === 'or'">
+              {{ group.logic | uppercase }}
+            </span>
+          </div>
+        }
+
+        @if (isCondition(item)) {
+          <!-- Condition row -->
+          <div class="condition-row">
+            <div class="condition-inputs">
+              <!-- Field selector -->
+              <mat-form-field appearance="outline" class="field-select">
+                <mat-label>Field</mat-label>
+                <mat-select [value]="item.field" (selectionChange)="onFieldChange(item, $event.value)">
+                  @for (field of availableFields(); track field.path) {
+                    <mat-option [value]="field.path">
+                      {{ field.name }}
+                      <span class="field-type">({{ field.type }})</span>
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Operator selector -->
+              <mat-form-field appearance="outline" class="operator-select">
+                <mat-label>Operator</mat-label>
+                <mat-select [value]="item.operator" (selectionChange)="onOperatorChange(item, $event.value)">
+                  @for (op of getOperatorsForField(item.field); track op.value) {
+                    <mat-option [value]="op.value">{{ op.label }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Value input (only if operator needs value) -->
+              @if (operatorNeedsValue(item.operator)) {
+                @if (item.valueType === 'boolean') {
+                  <mat-slide-toggle
+                    [checked]="item.value === true"
+                    (change)="onValueChange(item, $event.checked)"
+                    class="bool-toggle"
+                  >
+                    {{ item.value ? 'true' : 'false' }}
+                  </mat-slide-toggle>
+                } @else if (item.valueType === 'number') {
+                  <mat-form-field appearance="outline" class="value-input">
+                    <mat-label>Value</mat-label>
+                    <input
+                      matInput
+                      type="number"
+                      [value]="item.value"
+                      (input)="onValueChange(item, $any($event.target).value)"
+                    />
+                  </mat-form-field>
+                } @else {
+                  <mat-form-field appearance="outline" class="value-input">
+                    <mat-label>Value</mat-label>
+                    <input
+                      matInput
+                      type="text"
+                      [value]="item.value"
+                      (input)="onValueChange(item, $any($event.target).value)"
+                    />
+                  </mat-form-field>
+                }
+              }
+
+              <!-- Remove condition button -->
+              <button mat-icon-button class="remove-btn" matTooltip="Remove condition" (click)="removeItem(group, item.id)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          </div>
+        } @else if (isGroup(item)) {
+          <!-- Nested group -->
+          <ng-container *ngTemplateOutlet="groupTemplate; context: { group: item, isRoot: false, parentGroup: group }"></ng-container>
+        }
+      }
+
+      <!-- Empty state -->
+      @if (group.children.length === 0) {
+        <div class="empty-group">
+          <mat-icon>info_outline</mat-icon>
+          <span>No conditions. Add a condition or group.</span>
+        </div>
+      }
+    </div>
+
+    <!-- Group actions -->
+    <div class="group-actions">
+      <button mat-stroked-button class="add-condition-btn" (click)="addCondition(group)">
+        <mat-icon>add</mat-icon>
+        Add Condition
+      </button>
+      <button mat-stroked-button class="add-group-btn" (click)="addGroup(group)">
+        <mat-icon>folder_open</mat-icon>
+        Add Group
+      </button>
+    </div>
+  </div>
+</ng-template>

@@ -1,0 +1,169 @@
+.popover-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 999;
+}
+
+.transformation-popover {
+  position: fixed;
+  z-index: 1000;
+  width: 360px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  transform: translate(-50%, -50%);
+  animation: popoverIn 0.2s ease-out;
+}
+
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 12px 12px 0 0;
+}
+
+.popover-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.popover-content {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.mapping-info {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  & + & {
+    margin-top: 8px;
+  }
+}
+
+.info-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 60px;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.config-section {
+  margin-top: 12px;
+}
+
+.config-row {
+  display: flex;
+  gap: 12px;
+
+  mat-form-field {
+    flex: 1;
+  }
+}
+
+.preview-section {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border-radius: 8px;
+  border: 1px solid #e0e7ff;
+}
+
+.preview-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.preview-value {
+  font-size: 14px;
+  color: #1e293b;
+  font-family: 'Monaco', 'Menlo', monospace;
+  word-break: break-all;
+  min-height: 20px;
+}
+
+.popover-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 0 12px 12px;
+}
+
+.action-spacer {
+  flex: 1;
+}
+
+// Material overrides for this component
+::ng-deep .transformation-popover {
+  .mat-mdc-form-field {
+    font-size: 14px;
+  }
+
+  .mat-mdc-text-field-wrapper {
+    background: white;
+  }
+
+  .mat-mdc-form-field-subscript-wrapper {
+    font-size: 11px;
+  }
+}

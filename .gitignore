@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+tmp/
+out-tsc/
+
+# IDE
+.idea/
+.vscode/
+*.sublime-workspace
+
+# Angular
+.angular/
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Misc
+nul
+*.bak

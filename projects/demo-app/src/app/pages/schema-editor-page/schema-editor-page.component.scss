@@ -1,0 +1,278 @@
+/**
+ * Schema Editor Page Styles
+ *
+ * Example: Customize the schema-editor component via CSS variables:
+ *
+ * schema-editor {
+ *   --schema-editor-bg: #1e293b;           // Dark background
+ *   --schema-editor-field-bg: #334155;     // Field background
+ *   --schema-editor-text-primary: #f1f5f9; // Light text
+ *   --schema-editor-accent-primary: #60a5fa; // Blue accent
+ * }
+ */
+
+.page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  padding: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 24px;
+  color: white;
+  flex-shrink: 0;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    button {
+      color: white;
+    }
+  }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    opacity: 0.9;
+    margin: 8px 0 0 0;
+  }
+}
+
+.page-main {
+  flex: 1;
+  display: flex;
+  gap: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+// List Panel
+.list-panel {
+  width: 280px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid #e2e8f0;
+
+  .list-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  button {
+    color: #0ea5e9;
+  }
+}
+
+.list-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.empty-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #94a3b8;
+  text-align: center;
+
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0 0 16px 0;
+    font-size: 14px;
+  }
+
+  button {
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      margin-right: 4px;
+    }
+  }
+}
+
+.schema-list {
+  padding: 8px;
+}
+
+.schema-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 4px;
+
+  &:hover {
+    background: #f1f5f9;
+  }
+
+  &.active {
+    background: #eff6ff;
+    border: 1px solid #3b82f6;
+
+    .schema-icon {
+      color: #3b82f6;
+    }
+
+    .schema-name {
+      color: #1e40af;
+    }
+  }
+
+  .schema-icon {
+    color: #64748b;
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+
+  .schema-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .schema-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e293b;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .schema-meta {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+
+  .schema-menu-btn {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    color: #64748b;
+  }
+
+  &:hover .schema-menu-btn {
+    opacity: 1;
+  }
+}
+
+.list-footer {
+  padding: 12px;
+  border-top: 1px solid #e2e8f0;
+
+  .import-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+}
+
+// Editor Panel
+.editor-panel {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+
+  schema-editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+}
+
+.no-selection {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  text-align: center;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+
+  p {
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+.delete-action {
+  color: #ef4444 !important;
+
+  mat-icon {
+    color: #ef4444;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .page-main {
+    flex-direction: column;
+  }
+
+  .list-panel {
+    width: 100%;
+    max-height: 200px;
+  }
+}

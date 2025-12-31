@@ -1,0 +1,56 @@
+<!--
+  Mapper Page - Example usage of data-mapper component
+
+  This example shows:
+  - Providing source and target schemas
+  - Handling mapping change events
+  - Export/import functionality
+  - Custom styling via CSS variables (see .scss file)
+-->
+<div class="page-container">
+  <header class="page-header">
+    <h1>Data Mapper</h1>
+    <p class="subtitle">Example: Drag fields from source to target to create mappings</p>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="goToSchemaEditor()" matTooltip="Create or edit schemas">
+        <mat-icon>edit_note</mat-icon>
+        Schema Editor
+      </button>
+      <button mat-stroked-button (click)="importMappings()">
+        <mat-icon>upload</mat-icon>
+        Import
+      </button>
+      <button mat-stroked-button (click)="exportMappings()" [disabled]="mappings().length === 0">
+        <mat-icon>download</mat-icon>
+        Export
+      </button>
+      <button mat-stroked-button (click)="clearMappings()" [disabled]="mappings().length === 0">
+        <mat-icon>delete_sweep</mat-icon>
+        Clear
+      </button>
+    </div>
+    <input
+      #fileInput
+      type="file"
+      accept=".json"
+      style="display: none"
+      (change)="onFileSelected($event)"
+    />
+  </header>
+
+  <main class="page-main">
+    <!--
+      data-mapper component usage:
+      - [sourceSchema]: The source JSON schema to map from
+      - [targetSchema]: The target JSON schema to map to
+      - [sampleData]: Optional sample data for preview
+      - (mappingsChange): Emits when mappings are created/modified/deleted
+    -->
+    <data-mapper
+      [sourceSchema]="sourceSchema()"
+      [targetSchema]="targetSchema()"
+      [sampleData]="sampleData()"
+      (mappingsChange)="onMappingsChange($event)"
+    ></data-mapper>
+  </main>
+</div>

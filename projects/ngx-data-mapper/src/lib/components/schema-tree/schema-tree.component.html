@@ -1,0 +1,79 @@
+<div class="schema-tree" [class.source]="side === 'source'" [class.target]="side === 'target'">
+  <div class="schema-header">
+    <span class="schema-title">{{ schema.name }}</span>
+    <span class="schema-badge">{{ side === 'source' ? 'Source' : 'Target' }}</span>
+  </div>
+
+  <div class="schema-fields" #schemaFields>
+    <ng-container *ngTemplateOutlet="fieldList; context: { fields: schema.fields, level: 0 }"></ng-container>
+  </div>
+</div>
+
+<ng-template #fieldList let-fields="fields" let-level="level">
+  @for (field of fields; track trackByFieldId($index, field)) {
+    <div
+      #fieldItem
+      class="field-item"
+      [class.mapped]="isFieldMapped(field)"
+      [class.has-default]="hasDefaultValue(field)"
+      [class.has-children]="field.children && field.children.length > 0"
+      [class.expanded]="field.expanded"
+      [class.is-array]="field.type === 'array'"
+      [class.draggable]="side === 'source' && ((!field.children || field.children.length === 0) || field.type === 'array')"
+      [class.droppable]="side === 'target' && ((!field.children || field.children.length === 0) || field.type === 'array' || field.type === 'object')"
+      [class.clickable]="side === 'target' && (!isFieldMapped(field) || hasDefaultValue(field)) && field.type !== 'object' && field.type !== 'array'"
+      [style.padding-left.px]="16 + level * 20"
+      [attr.data-field-id]="field.id"
+      (mousedown)="onDragStart($event, field)"
+      (mouseup)="onDrop($event, field)"
+      (click)="onFieldClick($event, field)"
+    >
+      <!-- Expand/Collapse button for nested objects -->
+      @if (field.children && field.children.length > 0) {
+        <button class="expand-btn" (click)="toggleExpand(field, $event)">
+          <mat-icon>{{ field.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+        </button>
+      } @else {
+        <span class="expand-placeholder"></span>
+      }
+
+      <!-- Field type icon -->
+      <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
+
+      <!-- Field name with array indicator -->
+      <span class="field-name">{{ field.name }}@if (field.type === 'array') {<span class="array-indicator">[]</span>}</span>
+
+      <!-- Mapping indicator -->
+      @if (isFieldMapped(field)) {
+        <span class="mapping-indicator" [matTooltip]="getFieldMappingCount(field) + ' mapping(s)'">
+          <mat-icon>{{ field.type === 'array' ? 'loop' : 'link' }}</mat-icon>
+          @if (getFieldMappingCount(field) > 1) {
+            <span class="mapping-count">{{ getFieldMappingCount(field) }}</span>
+          }
+        </span>
+      }
+
+      <!-- Default value indicator -->
+      @if (hasDefaultValue(field)) {
+        <span class="default-indicator" [matTooltip]="'Default: ' + getDefaultValueDisplay(field)">
+          <mat-icon>edit</mat-icon>
+          <span class="default-value">{{ getDefaultValueDisplay(field) }}</span>
+        </span>
+      }
+
+      <!-- Connection point - show for leaf nodes, arrays, and objects (on target for array-to-object) -->
+      @if ((!field.children || field.children.length === 0) || field.type === 'array' || (side === 'target' && field.type === 'object')) {
+        <div class="connection-point" [class.source]="side === 'source'" [class.target]="side === 'target'" [class.array-point]="field.type === 'array'" [class.object-point]="field.type === 'object'">
+          <span class="point-dot"></span>
+        </div>
+      }
+    </div>
+
+    <!-- Nested children -->
+    @if (field.children && field.children.length > 0 && field.expanded) {
+      <div class="nested-fields">
+        <ng-container *ngTemplateOutlet="fieldList; context: { fields: field.children, level: level + 1 }"></ng-container>
+      </div>
+    }
+  }
+</ng-template>

@@ -1,0 +1,67 @@
+<div class="popover-backdrop" (click)="onBackdropClick($event)">
+  <div class="popover-container">
+    <div class="popover-header">
+      <div class="header-title">
+        <mat-icon>edit</mat-icon>
+        <span>Default Value</span>
+      </div>
+      <button mat-icon-button (click)="onClose()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="popover-content">
+      <div class="field-info">
+        <span class="field-name">{{ field.name }}</span>
+        <span class="field-type">{{ fieldType }}</span>
+      </div>
+
+      <!-- String input -->
+      @if (fieldType === 'string') {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Default Value</mat-label>
+          <input matInput [(ngModel)]="stringValue" placeholder="Enter default value">
+        </mat-form-field>
+      }
+
+      <!-- Number input -->
+      @if (fieldType === 'number') {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Default Value</mat-label>
+          <input matInput type="number" [(ngModel)]="numberValue" placeholder="Enter number">
+        </mat-form-field>
+      }
+
+      <!-- Boolean input -->
+      @if (fieldType === 'boolean') {
+        <div class="boolean-input">
+          <mat-slide-toggle [(ngModel)]="booleanValue">
+            {{ booleanValue ? 'True' : 'False' }}
+          </mat-slide-toggle>
+        </div>
+      }
+
+      <!-- Date input -->
+      @if (fieldType === 'date') {
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Default Date</mat-label>
+          <input matInput [matDatepicker]="picker" [(ngModel)]="dateValue">
+          <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      }
+    </div>
+
+    <div class="popover-actions">
+      @if (existingValue) {
+        <button mat-button color="warn" (click)="onDelete()">
+          <mat-icon>delete</mat-icon>
+          Remove
+        </button>
+      }
+      <span class="spacer"></span>
+      <button mat-button (click)="onClose()">Cancel</button>
+      <button mat-flat-button color="primary" (click)="onSave()">Save</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+<!--
+  Schema Editor Page - Example usage of schema-editor component
+
+  This example shows:
+  - Managing a list of schemas with selection
+  - Binding to the schema editor's inputs/outputs
+  - Custom styling via CSS variables (see .scss file)
+-->
+<div class="page-container">
+  <header class="page-header">
+    <div class="header-left">
+      <button mat-icon-button (click)="goToMapper()" matTooltip="Back to Mapper">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <h1>Schema Editor</h1>
+    </div>
+    <p class="subtitle">Example: Create and manage reusable object schemas</p>
+  </header>
+
+  <main class="page-main">
+    <!-- Schema List Panel -->
+    <div class="list-panel">
+      <div class="list-header">
+        <span class="list-title">Schemas</span>
+        <button mat-icon-button (click)="createNewSchema()" matTooltip="New Schema">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+
+      <div class="list-content">
+        @if (schemas().length === 0) {
+          <div class="empty-list">
+            <mat-icon>folder_open</mat-icon>
+            <p>No schemas yet</p>
+            <button mat-stroked-button (click)="createNewSchema()">
+              <mat-icon>add</mat-icon>
+              Create First Schema
+            </button>
+          </div>
+        } @else {
+          <div class="schema-list">
+            @for (schema of schemas(); track schema.id) {
+              <div
+                class="schema-item"
+                [class.active]="selectedSchemaId() === schema.id"
+                (click)="selectSchema(schema.id)"
+              >
+                <mat-icon class="schema-icon">data_object</mat-icon>
+                <div class="schema-info">
+                  <span class="schema-name">{{ schema.name }}</span>
+                  <span class="schema-meta">{{ schema.fields.length }} field(s)</span>
+                </div>
+                <button
+                  mat-icon-button
+                  class="schema-menu-btn"
+                  [matMenuTriggerFor]="schemaMenu"
+                  (click)="$event.stopPropagation()"
+                >
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #schemaMenu="matMenu">
+                  <button mat-menu-item (click)="duplicateSchema(schema)">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Duplicate</span>
+                  </button>
+                  <button mat-menu-item (click)="exportSchema(schema)">
+                    <mat-icon>download</mat-icon>
+                    <span>Export JSON Schema</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteSchema(schema.id)" class="delete-action">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <div class="list-footer">
+        <input
+          #importInput
+          type="file"
+          accept=".json"
+          style="display: none"
+          (change)="importSchema($event)"
+        />
+        <button mat-stroked-button (click)="importInput.click()" class="import-btn">
+          <mat-icon>upload</mat-icon>
+          Import
+        </button>
+      </div>
+    </div>
+
+    <!-- Editor Panel -->
+    <div class="editor-panel">
+      @if (selectedSchema()) {
+        <!--
+          schema-editor component usage:
+          - [schema]: Pass the schema definition to edit
+          - (schemaChange): Handle changes when user modifies the schema
+        -->
+        <schema-editor
+          [schema]="selectedSchema()!"
+          (schemaChange)="onSchemaChange($event)"
+        ></schema-editor>
+      } @else {
+        <div class="no-selection">
+          <mat-icon>touch_app</mat-icon>
+          <p>Select a schema to edit or create a new one</p>
+        </div>
+      }
+    </div>
+  </main>
+</div>

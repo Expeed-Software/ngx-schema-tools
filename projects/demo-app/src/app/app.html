@@ -1,0 +1,36 @@
+<div class="app-container">
+  <header class="app-header">
+    <h1>Data Mapper</h1>
+    <p class="subtitle">Drag fields from source to target to create mappings</p>
+    <div class="header-actions">
+      <button mat-stroked-button (click)="importMappings()">
+        <mat-icon>upload</mat-icon>
+        Import
+      </button>
+      <button mat-stroked-button (click)="exportMappings()" [disabled]="mappings().length === 0">
+        <mat-icon>download</mat-icon>
+        Export
+      </button>
+      <button mat-stroked-button (click)="clearMappings()" [disabled]="mappings().length === 0">
+        <mat-icon>delete_sweep</mat-icon>
+        Clear
+      </button>
+    </div>
+    <input
+      #fileInput
+      type="file"
+      accept=".json"
+      style="display: none"
+      (change)="onFileSelected($event)"
+    />
+  </header>
+
+  <main class="app-main">
+    <data-mapper
+      [sourceSchema]="sourceSchema()"
+      [targetSchema]="targetSchema()"
+      [sampleData]="sampleData()"
+      (mappingsChange)="onMappingsChange($event)"
+    ></data-mapper>
+  </main>
+</div>
