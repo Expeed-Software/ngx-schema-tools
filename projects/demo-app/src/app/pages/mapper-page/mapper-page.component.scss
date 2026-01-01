@@ -1,15 +1,38 @@
 /**
  * Mapper Page Styles
  *
- * Example: Customize the data-mapper component via CSS variables:
+ * Theme Examples:
  *
+ * DARK THEME (currently applied below):
  * data-mapper {
- *   --data-mapper-bg: #1e293b;              // Dark background
- *   --data-mapper-panel-bg: #334155;        // Panel background
- *   --data-mapper-text-primary: #f1f5f9;    // Light text
- *   --data-mapper-accent-primary: #818cf8;  // Purple accent
- *   --data-mapper-connector-color: #818cf8; // Connector line color
- *   --data-mapper-panel-width: 350px;       // Wider panels
+ *   --data-mapper-bg: #1e293b;
+ *   --data-mapper-panel-bg: #334155;
+ *   --data-mapper-text-primary: #f1f5f9;
+ *   --data-mapper-accent-primary: #818cf8;
+ *   --data-mapper-connector-color: #818cf8;
+ * }
+ *
+ * LIGHT THEME:
+ * data-mapper {
+ *   --data-mapper-bg: #f8fafc;
+ *   --data-mapper-panel-bg: #ffffff;
+ *   --data-mapper-panel-header-bg: #f1f5f9;
+ *   --data-mapper-text-primary: #1e293b;
+ *   --data-mapper-text-secondary: #64748b;
+ *   --data-mapper-text-muted: #94a3b8;
+ *   --data-mapper-accent-primary: #6366f1;
+ *   --data-mapper-connector-color: #6366f1;
+ *   --data-mapper-border-color: #e2e8f0;
+ *   --data-mapper-toolbar-bg: #ffffff;
+ *   --data-mapper-toolbar-border: #e2e8f0;
+ * }
+ *
+ * GREEN ACCENT THEME:
+ * data-mapper {
+ *   --data-mapper-bg: #f0fdf4;
+ *   --data-mapper-panel-bg: #ffffff;
+ *   --data-mapper-accent-primary: #10b981;
+ *   --data-mapper-connector-color: #10b981;
  * }
  */
 
@@ -77,5 +100,18 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+
+    // Light theme customization
+    --data-mapper-bg: #f8fafc;
+    --data-mapper-panel-bg: #ffffff;
+    --data-mapper-panel-header-bg: #f1f5f9;
+    --data-mapper-text-primary: #1e293b;
+    --data-mapper-text-secondary: #64748b;
+    --data-mapper-text-muted: #94a3b8;
+    --data-mapper-accent-primary: #6366f1;
+    --data-mapper-connector-color: #6366f1;
+    --data-mapper-border-color: #e2e8f0;
+    --data-mapper-toolbar-bg: #ffffff;
+    --data-mapper-toolbar-border: #e2e8f0;
   }
 }
