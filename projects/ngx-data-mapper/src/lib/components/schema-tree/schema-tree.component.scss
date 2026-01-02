@@ -7,9 +7,10 @@
 }
 
 .schema-tree {
-  background: var(--surface-card, #ffffff);
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--data-mapper-panel-bg, var(--surface-card, #ffffff));
+  border-radius: var(--data-mapper-panel-border-radius, 12px);
+  border: var(--data-mapper-panel-border, none);
+  box-shadow: var(--data-mapper-panel-shadow, 0 2px 8px rgba(0, 0, 0, 0.08));
   overflow: hidden;
   height: 100%;
   min-height: 0;

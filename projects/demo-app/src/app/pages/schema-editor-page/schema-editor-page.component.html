@@ -9,12 +9,9 @@
 <div class="page-container">
   <header class="page-header">
     <div class="header-left">
-      <button mat-icon-button (click)="goToMapper()" matTooltip="Back to Mapper">
-        <mat-icon>arrow_back</mat-icon>
-      </button>
       <h1>Schema Editor</h1>
     </div>
-    <p class="subtitle">Example: Create and manage reusable object schemas</p>
+    <p class="subtitle">Create and manage reusable object schemas</p>
   </header>
 
   <main class="page-main">
@@ -22,13 +19,13 @@
     <div class="list-panel">
       <div class="list-header">
         <span class="list-title">Schemas</span>
-        <button mat-icon-button (click)="createNewSchema()" matTooltip="New Schema">
-          <mat-icon>add</mat-icon>
+        <button mat-flat-button color="primary" class="add-schema-btn" (click)="createNewSchema()">
+          + Add Schema
         </button>
       </div>
 
       <div class="list-content">
-        @if (schemas().length === 0) {
+        @if (appState.schemas().length === 0) {
           <div class="empty-list">
             <mat-icon>folder_open</mat-icon>
             <p>No schemas yet</p>
@@ -39,7 +36,7 @@
           </div>
         } @else {
           <div class="schema-list">
-            @for (schema of schemas(); track schema.id) {
+            @for (schema of appState.schemas(); track schema.id) {
               <div
                 class="schema-item"
                 [class.active]="selectedSchemaId() === schema.id"
@@ -96,11 +93,6 @@
     <!-- Editor Panel -->
     <div class="editor-panel">
       @if (selectedSchema()) {
-        <!--
-          schema-editor component usage:
-          - [schema]: Pass the schema definition to edit
-          - (schemaChange): Handle changes when user modifies the schema
-        -->
         <schema-editor
           [schema]="selectedSchema()!"
           (schemaChange)="onSchemaChange($event)"

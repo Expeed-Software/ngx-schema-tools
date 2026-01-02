@@ -21,6 +21,8 @@ export class MappingService {
   private arrayToObjectMappings = signal<ArrayToObjectMapping[]>([]);
   private defaultValues = signal<DefaultValue[]>([]);
   private selectedMappingId = signal<string | null>(null);
+  private _sourceSchemaRef = signal<string | null>(null);
+  private _targetSchemaRef = signal<string | null>(null);
   private dragState = signal<DragState>({
     isDragging: false,
     sourceField: null,
@@ -33,6 +35,8 @@ export class MappingService {
   readonly allArrayMappings = computed(() => this.arrayMappings());
   readonly allArrayToObjectMappings = computed(() => this.arrayToObjectMappings());
   readonly allDefaultValues = computed(() => this.defaultValues());
+  readonly sourceSchemaRef = computed(() => this._sourceSchemaRef());
+  readonly targetSchemaRef = computed(() => this._targetSchemaRef());
   readonly selectedMapping = computed(() => {
     const id = this.selectedMappingId();
     return this.mappings().find((m) => m.id === id) || null;
@@ -499,6 +503,16 @@ export class MappingService {
     this.arrayToObjectMappings.set([]);
     this.defaultValues.set([]);
     this.selectedMappingId.set(null);
+    this._sourceSchemaRef.set(null);
+    this._targetSchemaRef.set(null);
+  }
+
+  setSourceSchemaRef(ref: string | null): void {
+    this._sourceSchemaRef.set(ref);
+  }
+
+  setTargetSchemaRef(ref: string | null): void {
+    this._targetSchemaRef.set(ref);
   }
 
   // Default value methods
@@ -534,7 +548,7 @@ export class MappingService {
   }
 
   exportMappings(name?: string, description?: string): string {
-    const exportData = {
+    const exportData: Record<string, unknown> = {
       version: '1.0',
       name: name || 'Mapping Configuration',
       description: description || '',
@@ -543,6 +557,15 @@ export class MappingService {
       arrayToObjectMappings: this.arrayToObjectMappings(),
       defaultValues: this.defaultValues(),
     };
+
+    // Include schema refs if set
+    if (this._sourceSchemaRef()) {
+      exportData['sourceSchemaRef'] = this._sourceSchemaRef();
+    }
+    if (this._targetSchemaRef()) {
+      exportData['targetSchemaRef'] = this._targetSchemaRef();
+    }
+
     return JSON.stringify(exportData, null, 2);
   }
 
@@ -550,7 +573,7 @@ export class MappingService {
    * Export mappings as a MappingDocument object (not stringified)
    */
   exportMappingsAsObject(name?: string, description?: string): object {
-    return {
+    const exportData: Record<string, unknown> = {
       version: '1.0',
       name: name || 'Mapping Configuration',
       description: description || '',
@@ -559,6 +582,16 @@ export class MappingService {
       arrayToObjectMappings: this.arrayToObjectMappings(),
       defaultValues: this.defaultValues(),
     };
+
+    // Include schema refs if set
+    if (this._sourceSchemaRef()) {
+      exportData['sourceSchemaRef'] = this._sourceSchemaRef();
+    }
+    if (this._targetSchemaRef()) {
+      exportData['targetSchemaRef'] = this._targetSchemaRef();
+    }
+
+    return exportData;
   }
 
   importMappings(json: string): void {
@@ -569,6 +602,8 @@ export class MappingService {
         this.arrayMappings.set(data.arrayMappings as ArrayMapping[] || []);
         this.arrayToObjectMappings.set(data.arrayToObjectMappings as ArrayToObjectMapping[] || []);
         this.defaultValues.set(data.defaultValues as DefaultValue[] || []);
+        this._sourceSchemaRef.set(data.sourceSchemaRef || null);
+        this._targetSchemaRef.set(data.targetSchemaRef || null);
       } else {
         // Legacy format
         this.mappings.set(data as FieldMapping[]);

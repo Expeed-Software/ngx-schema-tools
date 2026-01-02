@@ -13,234 +13,522 @@
         />
       </mat-form-field>
     </div>
+
+    @if (showJsonToggle) {
+      <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)" class="view-toggle">
+        <mat-button-toggle value="visual">Visual</mat-button-toggle>
+        <mat-button-toggle value="json">JSON</mat-button-toggle>
+      </mat-button-toggle-group>
+    }
+
     <div class="header-actions">
-      <button mat-flat-button color="primary" (click)="addField()">
-        <mat-icon>add</mat-icon>
-        Add Field
-      </button>
+      @if (viewMode() === 'visual') {
+        <button mat-flat-button color="primary" (click)="addField()">
+          <mat-icon>add</mat-icon>
+          Add Field
+        </button>
+      } @else {
+        <button mat-stroked-button (click)="formatJson()">
+          <mat-icon>auto_fix_high</mat-icon>
+          Format
+        </button>
+        <button mat-flat-button color="primary" (click)="applyJsonChanges()" [disabled]="jsonError()">
+          <mat-icon>check</mat-icon>
+          Apply
+        </button>
+      }
     </div>
   </div>
 
-  <!-- Fields List -->
-  <div class="fields-container">
+  <!-- JSON View -->
+  @if (viewMode() === 'json') {
+    <div class="json-view">
+      @if (jsonError()) {
+        <div class="json-error">
+          <mat-icon>error</mat-icon>
+          {{ jsonError() }}
+        </div>
+      }
+      <textarea
+        class="json-textarea"
+        [value]="jsonText()"
+        (input)="onJsonTextChange($any($event.target).value)"
+        spellcheck="false"
+      ></textarea>
+    </div>
+  }
+
+  <!-- Fields List (Visual View) -->
+  <div class="fields-container" [class.hidden]="viewMode() === 'json'">
     @if (fields().length === 0) {
       <div class="empty-state">
         <mat-icon>schema</mat-icon>
         <p>No fields yet. Click "Add Field" to get started.</p>
       </div>
     } @else {
-      <div class="fields-list">
-        <ng-container *ngTemplateOutlet="fieldListTemplate; context: { fields: fields(), level: 0, parentList: fields() }"></ng-container>
+      <div
+        class="fields-list"
+        cdkDropList
+        [cdkDropListData]="fields()"
+        (cdkDropListDropped)="onFieldDrop($event)"
+      >
+        @for (field of fields(); track field.id) {
+          <div class="field-wrapper" cdkDrag>
+            <!-- Drag Placeholder -->
+            <div class="drag-placeholder" *cdkDragPlaceholder></div>
+
+            <!-- Drag Preview -->
+            <div *cdkDragPreview class="drag-preview">
+              <mat-icon>{{ getTypeIcon(field.type) }}</mat-icon>
+              {{ field.name || 'unnamed' }}
+            </div>
+
+            <div
+              class="field-item"
+              [class.is-editing]="field.isEditing"
+              [class.is-complex]="field.type === 'object' || field.type === 'array'"
+            >
+              <!-- Drag Handle -->
+              <div class="drag-handle" cdkDragHandle matTooltip="Drag to reorder">
+                <mat-icon>drag_indicator</mat-icon>
+              </div>
+
+              <!-- Indent/Outdent Buttons -->
+              <div class="indent-buttons">
+                <button
+                  class="indent-btn"
+                  [disabled]="!canIndent(field, fields())"
+                  (click)="indentField(field, fields())"
+                  matTooltip="Move into previous object/array"
+                >
+                  <mat-icon>chevron_right</mat-icon>
+                </button>
+                <button
+                  class="indent-btn"
+                  disabled
+                  matTooltip="Move out of parent"
+                >
+                  <mat-icon>chevron_left</mat-icon>
+                </button>
+              </div>
+
+              <!-- Expand/Collapse -->
+              @if (field.type === 'object' || field.type === 'array') {
+                <button
+                  class="expand-btn"
+                  (click)="toggleExpand(field)"
+                  [matTooltip]="field.expanded ? 'Collapse' : 'Expand'"
+                >
+                  <mat-icon>{{ field.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+                </button>
+              } @else {
+                <span class="expand-placeholder"></span>
+              }
+
+              <!-- Type Icon -->
+              <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
+
+              <!-- Field Name -->
+              @if (field.isEditing) {
+                <input
+                  class="field-name-input"
+                  [value]="field.name"
+                  (input)="onFieldNameChange(field, $event)"
+                  (blur)="stopEdit(field)"
+                  (keydown)="onFieldNameKeydown($event, field)"
+                  placeholder="Field name"
+                  autofocus
+                />
+              } @else {
+                <span class="field-name" (dblclick)="startEdit(field)">
+                  {{ field.name || 'unnamed' }}
+                  @if (field.type === 'array') {
+                    <span class="array-indicator">[]</span>
+                  }
+                </span>
+              }
+
+              <!-- Required Toggle -->
+              <button
+                class="required-btn"
+                [class.is-required]="field.required"
+                (click)="toggleRequired(field)"
+                [matTooltip]="field.required ? 'Required (click to make optional)' : 'Optional (click to make required)'"
+              >
+                <mat-icon>{{ field.required ? 'star' : 'star_border' }}</mat-icon>
+              </button>
+
+              <!-- Description Input -->
+              <input
+                class="description-input"
+                [value]="field.description || ''"
+                (input)="onDescriptionChange(field, $any($event.target).value)"
+                placeholder="Description..."
+              />
+
+              <!-- Type Selector -->
+              <mat-form-field appearance="outline" class="type-selector">
+                <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)">
+                  @for (type of fieldTypes; track type.value) {
+                    <mat-option [value]="type.value">
+                      <mat-icon>{{ type.icon }}</mat-icon>
+                      {{ type.label }}
+                    </mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+
+              <!-- Actions -->
+              <div class="field-actions">
+                @if (field.type === 'object' || field.type === 'array') {
+                  <button
+                    mat-icon-button
+                    (click)="addChildField(field)"
+                    matTooltip="Add child field"
+                  >
+                    <mat-icon>add_circle_outline</mat-icon>
+                  </button>
+                }
+                @if (field.type === 'string' || field.type === 'number') {
+                  <button
+                    mat-icon-button
+                    (click)="toggleValuesEditor(field)"
+                    [matTooltip]="field.allowedValues?.length ? 'Edit allowed values (' + field.allowedValues!.length + ')' : 'Add allowed values'"
+                    [class.has-values]="field.allowedValues?.length"
+                  >
+                    <mat-icon>list</mat-icon>
+                  </button>
+                }
+                @if (field.type !== 'object' && field.type !== 'array') {
+                  <button
+                    mat-icon-button
+                    (click)="toggleDefaultEditor(field)"
+                    [matTooltip]="field.defaultValue !== undefined ? 'Default: ' + field.defaultValue : 'Set default value'"
+                    [class.has-default]="field.defaultValue !== undefined"
+                  >
+                    <mat-icon>{{ field.defaultValue !== undefined ? 'label' : 'label_outline' }}</mat-icon>
+                  </button>
+                }
+                <button mat-icon-button [matMenuTriggerFor]="fieldMenu" matTooltip="More options">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #fieldMenu="matMenu">
+                  <button mat-menu-item (click)="startEdit(field)">
+                    <mat-icon>edit</mat-icon>
+                    <span>Rename</span>
+                  </button>
+                  <button mat-menu-item (click)="duplicateField(field, fields())">
+                    <mat-icon>content_copy</mat-icon>
+                    <span>Duplicate</span>
+                  </button>
+                  <button mat-menu-item (click)="deleteField(field, fields())" class="delete-action">
+                    <mat-icon>delete</mat-icon>
+                    <span>Delete</span>
+                  </button>
+                </mat-menu>
+              </div>
+            </div>
+
+            <!-- Allowed Values Editor -->
+            @if (field.isEditingValues && (field.type === 'string' || field.type === 'number')) {
+              <div class="allowed-values-editor">
+                <div class="values-header">
+                  <span class="values-label">Allowed values:</span>
+                  <input
+                    #valueInput
+                    class="value-input"
+                    type="text"
+                    placeholder="Type value and press Enter"
+                    (keydown)="onAllowedValueKeydown($event, field, valueInput)"
+                  />
+                  <button class="add-value-btn" (click)="addAllowedValue(field, $event)" matTooltip="Add value">
+                    <mat-icon>add</mat-icon>
+                  </button>
+                </div>
+                @if (field.allowedValues && field.allowedValues.length > 0) {
+                  <div class="values-list">
+                    @for (value of field.allowedValues; track value; let vi = $index) {
+                      <span class="value-chip">
+                        {{ value }}
+                        <button class="remove-value-btn" (click)="removeAllowedValue(field, vi)" matTooltip="Remove">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </span>
+                    }
+                  </div>
+                } @else {
+                  <div class="no-values">No values defined yet</div>
+                }
+              </div>
+            }
+
+            <!-- Default Value Editor -->
+            @if (field.isEditingDefault && field.type !== 'object' && field.type !== 'array') {
+              <div class="default-value-editor">
+                <div class="default-header">
+                  <span class="default-label">Default value:</span>
+                  @if (field.type === 'boolean') {
+                    <select
+                      class="default-select"
+                      [value]="field.defaultValue?.toString() || ''"
+                      (change)="onDefaultValueChange(field, $any($event.target).value)"
+                    >
+                      <option value="">No default</option>
+                      <option value="true">true</option>
+                      <option value="false">false</option>
+                    </select>
+                  } @else {
+                    <input
+                      class="default-input"
+                      [type]="field.type === 'number' ? 'number' : 'text'"
+                      [value]="field.defaultValue ?? ''"
+                      (input)="onDefaultValueChange(field, $any($event.target).value)"
+                      (keydown)="onDefaultValueKeydown($event, field)"
+                      placeholder="Enter default value"
+                    />
+                  }
+                  @if (field.defaultValue !== undefined) {
+                    <button class="clear-default-btn" (click)="clearDefaultValue(field)" matTooltip="Clear default">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- Nested Children -->
+            @if ((field.type === 'object' || field.type === 'array') && field.expanded && field.children) {
+              <div
+                class="nested-fields"
+                cdkDropList
+                [cdkDropListData]="field.children"
+                (cdkDropListDropped)="onFieldDrop($event)"
+              >
+                @if (field.children.length > 0) {
+                  @for (child of field.children; track child.id) {
+                    <div class="field-wrapper" cdkDrag>
+                      <div class="drag-placeholder" *cdkDragPlaceholder></div>
+                      <div *cdkDragPreview class="drag-preview">
+                        <mat-icon>{{ getTypeIcon(child.type) }}</mat-icon>
+                        {{ child.name || 'unnamed' }}
+                      </div>
+                      <ng-container *ngTemplateOutlet="fieldItemTemplate; context: { field: child, parentList: field.children, level: 1 }"></ng-container>
+
+                      <!-- Allowed Values Editor for nested field -->
+                      @if (child.isEditingValues && (child.type === 'string' || child.type === 'number')) {
+                        <div class="allowed-values-editor">
+                          <div class="values-header">
+                            <span class="values-label">Allowed values:</span>
+                            <input
+                              #childValueInput
+                              class="value-input"
+                              type="text"
+                              placeholder="Type value and press Enter"
+                              (keydown)="onAllowedValueKeydown($event, child, childValueInput)"
+                            />
+                            <button class="add-value-btn" (click)="addAllowedValue(child, $event)" matTooltip="Add value">
+                              <mat-icon>add</mat-icon>
+                            </button>
+                          </div>
+                          @if (child.allowedValues && child.allowedValues.length > 0) {
+                            <div class="values-list">
+                              @for (value of child.allowedValues; track value; let vi = $index) {
+                                <span class="value-chip">
+                                  {{ value }}
+                                  <button class="remove-value-btn" (click)="removeAllowedValue(child, vi)" matTooltip="Remove">
+                                    <mat-icon>close</mat-icon>
+                                  </button>
+                                </span>
+                              }
+                            </div>
+                          } @else {
+                            <div class="no-values">No values defined yet</div>
+                          }
+                        </div>
+                      }
+
+                      <!-- Default Value Editor for nested field -->
+                      @if (child.isEditingDefault && child.type !== 'object' && child.type !== 'array') {
+                        <div class="default-value-editor">
+                          <div class="default-header">
+                            <span class="default-label">Default value:</span>
+                            @if (child.type === 'boolean') {
+                              <select
+                                class="default-select"
+                                [value]="child.defaultValue?.toString() || ''"
+                                (change)="onDefaultValueChange(child, $any($event.target).value)"
+                              >
+                                <option value="">No default</option>
+                                <option value="true">true</option>
+                                <option value="false">false</option>
+                              </select>
+                            } @else {
+                              <input
+                                class="default-input"
+                                [type]="child.type === 'number' ? 'number' : 'text'"
+                                [value]="child.defaultValue ?? ''"
+                                (input)="onDefaultValueChange(child, $any($event.target).value)"
+                                (keydown)="onDefaultValueKeydown($event, child)"
+                                placeholder="Enter default value"
+                              />
+                            }
+                            @if (child.defaultValue !== undefined) {
+                              <button class="clear-default-btn" (click)="clearDefaultValue(child)" matTooltip="Clear default">
+                                <mat-icon>close</mat-icon>
+                              </button>
+                            }
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                } @else {
+                  <div class="empty-nested">
+                    <span>No child fields</span>
+                    <button mat-button (click)="addChildField(field)" color="primary">
+                      <mat-icon>add</mat-icon>
+                      Add field
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
     }
   </div>
 </div>
 
-<!-- Recursive Field Template -->
-<ng-template #fieldListTemplate let-fields="fields" let-level="level" let-parentList="parentList">
-  @for (field of fields; track trackByFieldId($index, field); let i = $index; let first = $first; let last = $last) {
-    <div
-      class="field-item"
-      [class.has-children]="field.children && field.children.length > 0"
-      [class.is-editing]="field.isEditing"
-      [class.is-complex]="field.type === 'object' || field.type === 'array'"
-      [style.--level]="level"
-    >
-      <!-- Reorder Buttons -->
-      <div class="reorder-buttons">
-        <button
-          class="reorder-btn"
-          [disabled]="first"
-          (click)="moveFieldUp(field, parentList)"
-          matTooltip="Move up"
-        >
-          <mat-icon>keyboard_arrow_up</mat-icon>
-        </button>
-        <button
-          class="reorder-btn"
-          [disabled]="last"
-          (click)="moveFieldDown(field, parentList)"
-          matTooltip="Move down"
-        >
-          <mat-icon>keyboard_arrow_down</mat-icon>
-        </button>
-      </div>
-
-      <!-- Indent/Outdent Buttons -->
-      <div class="indent-buttons">
-        <button
-          class="indent-btn"
-          [disabled]="!canIndent(field, parentList)"
-          (click)="indentField(field, parentList)"
-          matTooltip="Move into previous object/array"
-        >
-          <mat-icon>chevron_right</mat-icon>
-        </button>
-        <button
-          class="indent-btn"
-          [disabled]="level === 0"
-          (click)="outdentField(field, parentList, level)"
-          matTooltip="Move out of parent"
-        >
-          <mat-icon>chevron_left</mat-icon>
-        </button>
-      </div>
-
-      <!-- Expand/Collapse -->
-      @if (field.type === 'object' || field.type === 'array') {
-        <button
-          class="expand-btn"
-          (click)="toggleExpand(field)"
-          matTooltip="{{ field.expanded ? 'Collapse' : 'Expand' }}"
-        >
-          <mat-icon>{{ field.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
-        </button>
-      } @else {
-        <span class="expand-placeholder"></span>
-      }
-
-      <!-- Type Icon -->
-      <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
-
-      <!-- Field Name -->
-      @if (field.isEditing) {
-        <input
-          class="field-name-input"
-          [value]="field.name"
-          (input)="onFieldNameChange(field, $event)"
-          (blur)="stopEdit(field)"
-          (keydown)="onFieldNameKeydown($event, field)"
-          placeholder="Field name"
-          autofocus
-        />
-      } @else {
-        <span class="field-name" (dblclick)="startEdit(field)">
-          {{ field.name || 'unnamed' }}
-          @if (field.type === 'array') {
-            <span class="array-indicator">[]</span>
-          }
-        </span>
-      }
-
-      <!-- Required Toggle -->
-      <button
-        class="required-btn"
-        [class.is-required]="field.required"
-        (click)="toggleRequired(field)"
-        [matTooltip]="field.required ? 'Required (click to make optional)' : 'Optional (click to make required)'"
-      >
-        <mat-icon>{{ field.required ? 'star' : 'star_border' }}</mat-icon>
-      </button>
-
-      <!-- Description Input -->
-      <input
-        class="description-input"
-        [value]="field.description || ''"
-        (input)="onDescriptionChange(field, $any($event.target).value)"
-        placeholder="Description..."
-      />
-
-      <!-- Type Selector -->
-      <mat-form-field appearance="outline" class="type-selector">
-        <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)">
-          @for (type of fieldTypes; track type.value) {
-            <mat-option [value]="type.value">
-              <mat-icon>{{ type.icon }}</mat-icon>
-              {{ type.label }}
-            </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-
-      <!-- Actions -->
-      <div class="field-actions">
-        @if (field.type === 'object' || field.type === 'array') {
-          <button
-            mat-icon-button
-            (click)="addChildField(field)"
-            matTooltip="Add child field"
-          >
-            <mat-icon>add_circle_outline</mat-icon>
-          </button>
-        }
-        @if (field.type === 'string' || field.type === 'number') {
-          <button
-            mat-icon-button
-            (click)="toggleValuesEditor(field)"
-            [matTooltip]="field.allowedValues?.length ? 'Edit allowed values (' + field.allowedValues.length + ')' : 'Add allowed values'"
-            [class.has-values]="field.allowedValues?.length"
-          >
-            <mat-icon>{{ field.allowedValues?.length ? 'list' : 'list' }}</mat-icon>
-          </button>
-        }
-        <button mat-icon-button [matMenuTriggerFor]="fieldMenu" matTooltip="More options">
-          <mat-icon>more_vert</mat-icon>
-        </button>
-        <mat-menu #fieldMenu="matMenu">
-          <button mat-menu-item (click)="startEdit(field)">
-            <mat-icon>edit</mat-icon>
-            <span>Rename</span>
-          </button>
-          <button mat-menu-item (click)="duplicateField(field, parentList)">
-            <mat-icon>content_copy</mat-icon>
-            <span>Duplicate</span>
-          </button>
-          <button mat-menu-item (click)="deleteField(field, parentList)" class="delete-action">
-            <mat-icon>delete</mat-icon>
-            <span>Delete</span>
-          </button>
-        </mat-menu>
-      </div>
+<!-- Field Item Template (for nested fields) -->
+<ng-template #fieldItemTemplate let-field="field" let-parentList="parentList" let-level="level">
+  <div
+    class="field-item"
+    [class.is-editing]="field.isEditing"
+    [class.is-complex]="field.type === 'object' || field.type === 'array'"
+    [style.--level]="level"
+  >
+    <div class="drag-handle" cdkDragHandle matTooltip="Drag to reorder">
+      <mat-icon>drag_indicator</mat-icon>
     </div>
 
-    <!-- Allowed Values Editor -->
-    @if (field.isEditingValues && (field.type === 'string' || field.type === 'number')) {
-      <div class="allowed-values-editor" [style.--level]="level">
-        <div class="values-header">
-          <span class="values-label">Allowed values:</span>
-          <input
-            #valueInput
-            class="value-input"
-            type="text"
-            placeholder="Type value and press Enter"
-            (keydown)="onAllowedValueKeydown($event, field, valueInput)"
-          />
-          <button class="add-value-btn" (click)="addAllowedValue(field, valueInput)" matTooltip="Add value">
-            <mat-icon>add</mat-icon>
-          </button>
-        </div>
-        @if (field.allowedValues && field.allowedValues.length > 0) {
-          <div class="values-list">
-            @for (value of field.allowedValues; track value; let vi = $index) {
-              <span class="value-chip">
-                {{ value }}
-                <button class="remove-value-btn" (click)="removeAllowedValue(field, vi)" matTooltip="Remove">
-                  <mat-icon>close</mat-icon>
-                </button>
-              </span>
-            }
-          </div>
-        } @else {
-          <div class="no-values">No values defined yet</div>
-        }
-      </div>
+    <div class="indent-buttons">
+      <button
+        class="indent-btn"
+        [disabled]="!canIndent(field, parentList)"
+        (click)="indentField(field, parentList)"
+        matTooltip="Move into previous object/array"
+      >
+        <mat-icon>chevron_right</mat-icon>
+      </button>
+      <button
+        class="indent-btn"
+        (click)="outdentField(field, parentList, level)"
+        matTooltip="Move out of parent"
+      >
+        <mat-icon>chevron_left</mat-icon>
+      </button>
+    </div>
+
+    @if (field.type === 'object' || field.type === 'array') {
+      <button class="expand-btn" (click)="toggleExpand(field)" [matTooltip]="field.expanded ? 'Collapse' : 'Expand'">
+        <mat-icon>{{ field.expanded ? 'expand_more' : 'chevron_right' }}</mat-icon>
+      </button>
+    } @else {
+      <span class="expand-placeholder"></span>
     }
 
-    <!-- Nested Children -->
-    @if ((field.type === 'object' || field.type === 'array') && field.expanded) {
-      <div class="nested-fields" [style.--level]="level + 1">
-        @if (field.children && field.children.length > 0) {
-          <ng-container *ngTemplateOutlet="fieldListTemplate; context: { fields: field.children, level: level + 1, parentList: field.children }"></ng-container>
-        } @else {
-          <div class="empty-nested">
-            <span>No child fields</span>
-            <button mat-button (click)="addChildField(field)" color="primary">
-              <mat-icon>add</mat-icon>
-              Add field
-            </button>
-          </div>
+    <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
+
+    @if (field.isEditing) {
+      <input
+        class="field-name-input"
+        [value]="field.name"
+        (input)="onFieldNameChange(field, $event)"
+        (blur)="stopEdit(field)"
+        (keydown)="onFieldNameKeydown($event, field)"
+        placeholder="Field name"
+        autofocus
+      />
+    } @else {
+      <span class="field-name" (dblclick)="startEdit(field)">
+        {{ field.name || 'unnamed' }}
+        @if (field.type === 'array') {
+          <span class="array-indicator">[]</span>
         }
-      </div>
+      </span>
     }
-  }
+
+    <button
+      class="required-btn"
+      [class.is-required]="field.required"
+      (click)="toggleRequired(field)"
+      [matTooltip]="field.required ? 'Required' : 'Optional'"
+    >
+      <mat-icon>{{ field.required ? 'star' : 'star_border' }}</mat-icon>
+    </button>
+
+    <input
+      class="description-input"
+      [value]="field.description || ''"
+      (input)="onDescriptionChange(field, $any($event.target).value)"
+      placeholder="Description..."
+    />
+
+    <mat-form-field appearance="outline" class="type-selector">
+      <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)">
+        @for (type of fieldTypes; track type.value) {
+          <mat-option [value]="type.value">
+            <mat-icon>{{ type.icon }}</mat-icon>
+            {{ type.label }}
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="field-actions">
+      @if (field.type === 'object' || field.type === 'array') {
+        <button mat-icon-button (click)="addChildField(field)" matTooltip="Add child field">
+          <mat-icon>add_circle_outline</mat-icon>
+        </button>
+      }
+      @if (field.type === 'string' || field.type === 'number') {
+        <button
+          mat-icon-button
+          (click)="toggleValuesEditor(field)"
+          [matTooltip]="field.allowedValues?.length ? 'Edit allowed values' : 'Add allowed values'"
+          [class.has-values]="field.allowedValues?.length"
+        >
+          <mat-icon>list</mat-icon>
+        </button>
+      }
+      @if (field.type !== 'object' && field.type !== 'array') {
+        <button
+          mat-icon-button
+          (click)="toggleDefaultEditor(field)"
+          [matTooltip]="field.defaultValue !== undefined ? 'Default: ' + field.defaultValue : 'Set default value'"
+          [class.has-default]="field.defaultValue !== undefined"
+        >
+          <mat-icon>{{ field.defaultValue !== undefined ? 'label' : 'label_outline' }}</mat-icon>
+        </button>
+      }
+      <button mat-icon-button [matMenuTriggerFor]="nestedMenu" matTooltip="More options">
+        <mat-icon>more_vert</mat-icon>
+      </button>
+      <mat-menu #nestedMenu="matMenu">
+        <button mat-menu-item (click)="startEdit(field)">
+          <mat-icon>edit</mat-icon>
+          <span>Rename</span>
+        </button>
+        <button mat-menu-item (click)="duplicateField(field, parentList)">
+          <mat-icon>content_copy</mat-icon>
+          <span>Duplicate</span>
+        </button>
+        <button mat-menu-item (click)="deleteField(field, parentList)" class="delete-action">
+          <mat-icon>delete</mat-icon>
+          <span>Delete</span>
+        </button>
+      </mat-menu>
+    </div>
+  </div>
 </ng-template>

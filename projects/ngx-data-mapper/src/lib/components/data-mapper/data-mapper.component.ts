@@ -81,6 +81,12 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
       this._targetSchemaInput.set(value);
     }
   }
+  @Input() set sourceSchemaRef(value: string | null | undefined) {
+    this.mappingService.setSourceSchemaRef(value ?? null);
+  }
+  @Input() set targetSchemaRef(value: string | null | undefined) {
+    this.mappingService.setTargetSchemaRef(value ?? null);
+  }
   @Input() sampleData: Record<string, unknown> = {};
 
   @Output() mappingsChange = new EventEmitter<FieldMapping[]>();

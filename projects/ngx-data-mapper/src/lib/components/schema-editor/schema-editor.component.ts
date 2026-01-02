@@ -14,7 +14,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
-import { DragDropModule } from '@angular/cdk/drag-drop';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { JsonSchema } from '../../models/json-schema.model';
 
 // Internal representation for UI editing
@@ -24,11 +25,13 @@ interface EditorField {
   type: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array';
   description?: string;
   required?: boolean;
+  defaultValue?: string | number | boolean;
   allowedValues?: string[];
   children?: EditorField[];
   expanded?: boolean;
   isEditing?: boolean;
   isEditingValues?: boolean;
+  isEditingDefault?: boolean;
 }
 
 @Component({
@@ -44,6 +47,7 @@ interface EditorField {
     MatSelectModule,
     MatTooltipModule,
     MatMenuModule,
+    MatButtonToggleModule,
     DragDropModule,
   ],
   templateUrl: './schema-editor.component.html',
@@ -52,16 +56,45 @@ interface EditorField {
 export class SchemaEditorComponent {
   @Input() set schema(value: JsonSchema | null) {
     if (value) {
+      // Don't overwrite fields if we have uncommitted changes (fields being edited or with empty names)
+      const hasUncommittedChanges = this.fields().some(f =>
+        f.isEditing || f.isEditingDefault || f.isEditingValues || !f.name
+      ) || this.hasUncommittedChildFields(this.fields());
+
       this.schemaName.set(value.title || 'New Schema');
-      this.fields.set(this.jsonSchemaToEditorFields(value));
+
+      if (!hasUncommittedChanges) {
+        this.fields.set(this.jsonSchemaToEditorFields(value));
+      }
     }
   }
+
+  private hasUncommittedChildFields(fields: EditorField[]): boolean {
+    for (const field of fields) {
+      if (field.children) {
+        if (field.children.some(c => c.isEditing || c.isEditingDefault || c.isEditingValues || !c.name)) {
+          return true;
+        }
+        if (this.hasUncommittedChildFields(field.children)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  @Input() showJsonToggle = true;
 
   @Output() schemaChange = new EventEmitter<JsonSchema>();
   @Output() save = new EventEmitter<JsonSchema>();
 
   schemaName = signal('New Schema');
   fields = signal<EditorField[]>([]);
+
+  // View mode: 'visual' or 'json'
+  viewMode = signal<'visual' | 'json'>('visual');
+  jsonText = signal<string>('');
+  jsonError = signal<string | null>(null);
 
   fieldTypes: Array<{ value: string; label: string; icon: string }> = [
     { value: 'string', label: 'String', icon: 'text_fields' },
@@ -97,7 +130,8 @@ export class SchemaEditorComponent {
       expanded: false,
     };
     this.fields.update(fields => [...fields, newField]);
-    this.emitChange();
+    // Don't emit change here - field has empty name and would be filtered out
+    // Change will be emitted in stopEdit() when user provides a name
   }
 
   // Add a child field to an object or array
@@ -114,7 +148,8 @@ export class SchemaEditorComponent {
     parent.children.push(newField);
     parent.expanded = true;
     this.fields.update(fields => [...fields]);
-    this.emitChange();
+    // Don't emit change here - field has empty name and would be filtered out
+    // Change will be emitted in stopEdit() when user provides a name
   }
 
   // Delete a field
@@ -206,22 +241,45 @@ export class SchemaEditorComponent {
 
   // Toggle allowed values editor
   toggleValuesEditor(field: EditorField): void {
+    const wasEditingDefault = field.isEditingDefault;
     field.isEditingValues = !field.isEditingValues;
-    if (field.isEditingValues && !field.allowedValues) {
-      field.allowedValues = [];
+    if (field.isEditingValues) {
+      // Close default editor when opening values editor
+      field.isEditingDefault = false;
+      if (!field.allowedValues) {
+        field.allowedValues = [];
+      }
     }
     this.fields.update(fields => [...fields]);
+    // Emit change if we closed the default editor (to save any default value)
+    if (wasEditingDefault) {
+      this.emitChange();
+    }
   }
 
   // Add allowed value
-  addAllowedValue(field: EditorField, input: HTMLInputElement): void {
-    const value = input.value.trim();
+  addAllowedValue(field: EditorField, input: HTMLInputElement | Event): void {
+    // Handle both direct input reference and event from button click
+    let inputEl: HTMLInputElement | null = null;
+
+    if (input instanceof HTMLInputElement) {
+      inputEl = input;
+    } else {
+      // Find the input by traversing up to .values-header and then querying for .value-input
+      const target = input.target as HTMLElement;
+      const header = target.closest('.values-header');
+      inputEl = header?.querySelector('.value-input') as HTMLInputElement;
+    }
+
+    if (!inputEl) return;
+
+    const value = inputEl.value.trim();
     if (value && !field.allowedValues?.includes(value)) {
       if (!field.allowedValues) {
         field.allowedValues = [];
       }
       field.allowedValues.push(value);
-      input.value = '';
+      inputEl.value = '';
       this.fields.update(fields => [...fields]);
       this.emitChange();
     }
@@ -244,6 +302,53 @@ export class SchemaEditorComponent {
     if (event.key === 'Enter') {
       event.preventDefault();
       this.addAllowedValue(field, input);
+    }
+  }
+
+  // Toggle default value editor
+  toggleDefaultEditor(field: EditorField): void {
+    const wasEditingValues = field.isEditingValues;
+    field.isEditingDefault = !field.isEditingDefault;
+    if (field.isEditingDefault) {
+      // Close values editor when opening default editor
+      field.isEditingValues = false;
+    }
+    this.fields.update(fields => [...fields]);
+    // Emit change if we closed the values editor (to save any allowed values)
+    if (wasEditingValues) {
+      this.emitChange();
+    }
+  }
+
+  // Update default value
+  onDefaultValueChange(field: EditorField, value: string): void {
+    if (value === '') {
+      field.defaultValue = undefined;
+    } else if (field.type === 'number') {
+      const num = parseFloat(value);
+      field.defaultValue = isNaN(num) ? undefined : num;
+    } else if (field.type === 'boolean') {
+      field.defaultValue = value === 'true';
+    } else {
+      field.defaultValue = value;
+    }
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Clear default value
+  clearDefaultValue(field: EditorField): void {
+    field.defaultValue = undefined;
+    field.isEditingDefault = false;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Handle Enter key in default value input
+  onDefaultValueKeydown(event: KeyboardEvent, field: EditorField): void {
+    if (event.key === 'Enter' || event.key === 'Escape') {
+      field.isEditingDefault = false;
+      this.fields.update(fields => [...fields]);
     }
   }
 
@@ -277,6 +382,16 @@ export class SchemaEditorComponent {
     }
   }
 
+  // Handle drag and drop reorder
+  onFieldDrop(event: CdkDragDrop<EditorField[]>): void {
+    if (event.previousIndex !== event.currentIndex) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      this.fields.update(fields => [...fields]);
+      // Don't emit change here - it causes parent to reset expanded state
+      // Order change will be captured on next edit or save
+    }
+  }
+
   // Check if field can be indented (previous sibling must be object/array)
   canIndent(field: EditorField, parentList: EditorField[]): boolean {
     const index = parentList.indexOf(field);
@@ -301,10 +416,13 @@ export class SchemaEditorComponent {
       prevSibling.children = [];
     }
     prevSibling.children.push(field);
+
+    // Always expand the target (keep open if already open, open if closed)
     prevSibling.expanded = true;
 
     this.fields.update(fields => [...fields]);
-    this.emitChange();
+    // Don't emit change here - it causes parent to reset expanded state
+    // Structure change will be captured on next edit or save
   }
 
   // Outdent field - move out of parent to grandparent level
@@ -328,7 +446,8 @@ export class SchemaEditorComponent {
     grandparentList.splice(parentIndex + 1, 0, field);
 
     this.fields.update(fields => [...fields]);
-    this.emitChange();
+    // Don't emit change here - it causes parent to reset expanded state
+    // Structure change will be captured on next edit or save
   }
 
   // Find the parent field that contains a given list
@@ -401,6 +520,7 @@ export class SchemaEditorComponent {
       description: schema.description,
       required: isRequired,
       allowedValues: schema.enum as string[] | undefined,
+      defaultValue: schema.default as string | number | boolean | undefined,
       expanded: false,
     };
 
@@ -533,12 +653,17 @@ export class SchemaEditorComponent {
       schema['enum'] = field.allowedValues;
     }
 
+    // Add default value
+    if (field.defaultValue !== undefined) {
+      schema['default'] = field.defaultValue;
+    }
+
     return schema;
   }
 
   private stripEditingState(fields: EditorField[]): EditorField[] {
     return fields.map(f => {
-      const { isEditing, isEditingValues, ...rest } = f;
+      const { isEditing, isEditingValues, isEditingDefault, ...rest } = f;
       return {
         ...rest,
         children: f.children ? this.stripEditingState(f.children) : undefined,
@@ -549,5 +674,49 @@ export class SchemaEditorComponent {
   // Track by function for ngFor
   trackByFieldId(index: number, field: EditorField): string {
     return field.id;
+  }
+
+  // --- JSON View Methods ---
+
+  setViewMode(mode: 'visual' | 'json'): void {
+    if (mode === 'json') {
+      // Sync JSON text from current schema state
+      this.jsonText.set(JSON.stringify(this.toJsonSchema(), null, 2));
+      this.jsonError.set(null);
+    }
+    this.viewMode.set(mode);
+  }
+
+  onJsonTextChange(text: string): void {
+    this.jsonText.set(text);
+    try {
+      JSON.parse(text);
+      this.jsonError.set(null);
+    } catch (e) {
+      this.jsonError.set((e as Error).message);
+    }
+  }
+
+  applyJsonChanges(): void {
+    try {
+      const parsed = JSON.parse(this.jsonText()) as JsonSchema;
+      // Update internal state from JSON
+      this.schemaName.set(parsed.title || 'New Schema');
+      this.fields.set(this.jsonSchemaToEditorFields(parsed));
+      this.jsonError.set(null);
+      this.emitChange();
+    } catch (e) {
+      this.jsonError.set((e as Error).message);
+    }
+  }
+
+  formatJson(): void {
+    try {
+      const parsed = JSON.parse(this.jsonText());
+      this.jsonText.set(JSON.stringify(parsed, null, 2));
+      this.jsonError.set(null);
+    } catch (e) {
+      this.jsonError.set((e as Error).message);
+    }
   }
 }
