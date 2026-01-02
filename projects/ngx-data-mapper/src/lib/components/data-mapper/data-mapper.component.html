@@ -28,6 +28,7 @@
         [mappings]="mappings()"
         (fieldDragStart)="onFieldDragStart($event)"
         (fieldPositionsChanged)="onSourcePositionsChanged($event)"
+        (sourceDrop)="onSourceFieldDrop($event)"
       ></schema-tree>
     </div>
 
@@ -35,7 +36,7 @@
     <svg class="connection-layer" #svgElement>
       <!-- Existing connections -->
       @for (connection of connections(); track trackByConnectionId($index, connection)) {
-        <g class="connection-group" [class.selected]="connection.isSelected" [class.array-mapping]="connection.isArrayMapping" [class.array-to-object-mapping]="connection.isArrayToObjectMapping">
+        <g class="connection-group" [class.selected]="connection.isSelected" [class.array-mapping]="connection.isArrayMapping" [class.array-to-object-mapping]="connection.isArrayToObjectMapping" [class.being-dragged]="connection.isBeingDragged">
           <!-- Connection paths -->
           @for (path of connection.paths; track $index) {
             <!-- Shadow path for glow effect -->
@@ -93,6 +94,28 @@
               {{ getTransformationIcon(connection.mappingId) }}
             </text>
           </g>
+
+          <!-- Source endpoint circles (draggable) -->
+          @for (sourcePoint of connection.sourcePoints; track $index) {
+            <circle
+              class="endpoint-handle source-endpoint"
+              [attr.cx]="sourcePoint.x"
+              [attr.cy]="sourcePoint.y"
+              r="6"
+              [class.selected]="connection.isSelected"
+              (mousedown)="onEndpointDragStart(connection, 'source', $index, $event)"
+            />
+          }
+
+          <!-- Target endpoint circle (draggable) -->
+          <circle
+            class="endpoint-handle target-endpoint"
+            [attr.cx]="connection.targetPoint.x"
+            [attr.cy]="connection.targetPoint.y"
+            r="6"
+            [class.selected]="connection.isSelected"
+            (mousedown)="onEndpointDragStart(connection, 'target', 0, $event)"
+          />
         </g>
       }
 

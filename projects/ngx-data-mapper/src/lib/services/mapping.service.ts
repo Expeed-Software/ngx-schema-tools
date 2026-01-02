@@ -26,6 +26,7 @@ export class MappingService {
     sourceField: null,
     startPoint: null,
     currentPoint: null,
+    dragMode: 'new',
   });
 
   readonly allMappings = computed(() => this.mappings());
@@ -48,6 +49,33 @@ export class MappingService {
       sourceField: field,
       startPoint,
       currentPoint: startPoint,
+      dragMode: 'new',
+    });
+  }
+
+  startEndpointDrag(
+    mappingId: string,
+    endpointType: 'source' | 'target',
+    startPoint: { x: number; y: number },
+    sourceFieldIndex?: number
+  ): void {
+    const mapping = this.mappings().find(m => m.id === mappingId);
+    if (!mapping) return;
+
+    // For source endpoint, we show the line from target back to cursor
+    // For target endpoint, we show the line from source(s) to cursor
+    const dragMode = endpointType === 'source' ? 'move-source' : 'move-target';
+
+    this.dragState.set({
+      isDragging: true,
+      sourceField: endpointType === 'source'
+        ? mapping.sourceFields[sourceFieldIndex ?? 0]
+        : mapping.targetField,
+      startPoint,
+      currentPoint: startPoint,
+      dragMode,
+      mappingId,
+      sourceFieldIndex,
     });
   }
 
@@ -64,7 +92,76 @@ export class MappingService {
       sourceField: null,
       startPoint: null,
       currentPoint: null,
+      dragMode: 'new',
     });
+  }
+
+  changeSourceField(mappingId: string, newSourceField: SchemaField, sourceFieldIndex?: number): void {
+    const mapping = this.mappings().find(m => m.id === mappingId);
+    if (!mapping) return;
+
+    // Don't allow if new source is the same as target
+    if (newSourceField.id === mapping.targetField.id) return;
+
+    // Don't allow if source already exists in the mapping
+    if (mapping.sourceFields.some(sf => sf.id === newSourceField.id)) return;
+
+    if (sourceFieldIndex !== undefined && mapping.sourceFields.length > 1) {
+      // Replace specific source field in multi-source mapping
+      const newSourceFields = [...mapping.sourceFields];
+      newSourceFields[sourceFieldIndex] = newSourceField;
+      this.mappings.update(mappings =>
+        mappings.map(m => m.id === mappingId ? { ...m, sourceFields: newSourceFields } : m)
+      );
+    } else {
+      // Single source mapping - replace the source field
+      this.mappings.update(mappings =>
+        mappings.map(m => m.id === mappingId ? { ...m, sourceFields: [newSourceField] } : m)
+      );
+    }
+  }
+
+  changeTargetField(mappingId: string, newTargetField: SchemaField): void {
+    const mapping = this.mappings().find(m => m.id === mappingId);
+    if (!mapping) return;
+
+    // Don't allow if new target is same as any source
+    if (mapping.sourceFields.some(sf => sf.id === newTargetField.id)) return;
+
+    // Check if another mapping already targets this field
+    const existingMapping = this.mappings().find(
+      m => m.targetField.id === newTargetField.id && m.id !== mappingId
+    );
+
+    if (existingMapping) {
+      // Merge into existing mapping (add sources)
+      const mergedSources = [
+        ...existingMapping.sourceFields,
+        ...mapping.sourceFields.filter(
+          sf => !existingMapping.sourceFields.some(esf => esf.id === sf.id)
+        ),
+      ];
+
+      this.mappings.update(mappings =>
+        mappings
+          .filter(m => m.id !== mappingId) // Remove old mapping
+          .map(m => m.id === existingMapping.id
+            ? {
+                ...m,
+                sourceFields: mergedSources,
+                transformations: mergedSources.length > 1
+                  ? [{ type: 'concat' as const, separator: ' ' }]
+                  : m.transformations,
+              }
+            : m
+          )
+      );
+    } else {
+      // Simply update the target field
+      this.mappings.update(mappings =>
+        mappings.map(m => m.id === mappingId ? { ...m, targetField: newTargetField } : m)
+      );
+    }
   }
 
   createMapping(

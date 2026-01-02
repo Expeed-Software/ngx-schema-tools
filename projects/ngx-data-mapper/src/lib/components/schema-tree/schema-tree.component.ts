@@ -39,6 +39,7 @@ export class SchemaTreeComponent implements AfterViewInit, OnDestroy {
   @Output() fieldDragStart = new EventEmitter<FieldPositionEvent>();
   @Output() fieldDragEnd = new EventEmitter<void>();
   @Output() fieldDrop = new EventEmitter<FieldPositionEvent>();
+  @Output() sourceDrop = new EventEmitter<FieldPositionEvent>(); // For endpoint dragging - drop on source field
   @Output() fieldPositionsChanged = new EventEmitter<Map<string, DOMRect>>();
   @Output() fieldDefaultValueClick = new EventEmitter<FieldPositionEvent>();
 
@@ -101,10 +102,29 @@ export class SchemaTreeComponent implements AfterViewInit, OnDestroy {
   onDragStart(event: MouseEvent, field: SchemaField): void {
     if (this.side !== 'source') return;
 
+    // Don't start new drag if endpoint dragging is in progress
+    const dragState = this.mappingService.currentDragState();
+    if (dragState.isDragging) return;
+
     const element = event.currentTarget as HTMLElement;
     const rect = element.getBoundingClientRect();
 
     this.fieldDragStart.emit({ field, element, rect });
+  }
+
+  isEndpointDragMode(): boolean {
+    const dragState = this.mappingService.currentDragState();
+    return dragState.isDragging && (dragState.dragMode === 'move-source' || dragState.dragMode === 'move-target');
+  }
+
+  isSourceEndpointDragging(): boolean {
+    const dragState = this.mappingService.currentDragState();
+    return dragState.isDragging && dragState.dragMode === 'move-source';
+  }
+
+  isTargetEndpointDragging(): boolean {
+    const dragState = this.mappingService.currentDragState();
+    return dragState.isDragging && dragState.dragMode === 'move-target';
   }
 
   onDragOver(event: DragEvent): void {
@@ -114,12 +134,22 @@ export class SchemaTreeComponent implements AfterViewInit, OnDestroy {
   }
 
   onDrop(event: MouseEvent, field: SchemaField): void {
-    if (this.side !== 'target') return;
-
     const element = event.currentTarget as HTMLElement;
     const rect = element.getBoundingClientRect();
 
-    this.fieldDrop.emit({ field, element, rect });
+    // Check if endpoint dragging is in progress (via MappingService drag state)
+    const dragState = this.mappingService.currentDragState();
+
+    // Handle source drop during endpoint dragging (moving source endpoint)
+    if (this.side === 'source' && dragState.isDragging && dragState.dragMode === 'move-source') {
+      this.sourceDrop.emit({ field, element, rect });
+      return;
+    }
+
+    // Handle target drop (either endpoint dragging or new mapping)
+    if (this.side === 'target') {
+      this.fieldDrop.emit({ field, element, rect });
+    }
   }
 
   getTypeIcon(type: string): string {

@@ -73,15 +73,17 @@ export class SvgConnectorService {
     containerRect: DOMRect
   ): Point {
     const relativeY = rect.top - containerRect.top + rect.height / 2;
+    // Offset to position endpoint circles outside the schema panels
+    const endpointOffset = 8;
 
     if (side === 'source') {
       return {
-        x: rect.right - containerRect.left,
+        x: rect.right - containerRect.left + endpointOffset,
         y: relativeY,
       };
     } else {
       return {
-        x: rect.left - containerRect.left,
+        x: rect.left - containerRect.left - endpointOffset,
         y: relativeY,
       };
     }

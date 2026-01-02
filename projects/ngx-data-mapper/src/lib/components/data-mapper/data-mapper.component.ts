@@ -42,6 +42,7 @@ interface VisualConnection {
   id: string;
   mappingId: string;
   paths: string[];
+  sourcePoints: Point[];
   midPoint: Point;
   targetPoint: Point;
   hasTransformation: boolean;
@@ -49,6 +50,7 @@ interface VisualConnection {
   isArrayMapping: boolean;
   isArrayToObjectMapping: boolean;
   hasFilter: boolean;
+  isBeingDragged: boolean;
 }
 
 @Component({
@@ -143,6 +145,13 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
   private dragStartPoint: Point | null = null;
   private resizeObserver!: ResizeObserver;
 
+  // Endpoint drag state
+  private isEndpointDragging = false;
+  private endpointDragMappingId: string | null = null;
+  private endpointDragType: 'source' | 'target' | null = null;
+  private endpointDragSourceIndex: number | null = null;
+  private endpointDragAnchorPoint: Point | null = null;
+
   ngAfterViewInit(): void {
     this.setupResizeObserver();
   }
@@ -192,7 +201,7 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
 
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {
-    if (!this.isDragging || !this.dragStartPoint || !this.svgContainer?.nativeElement) return;
+    if (!this.svgContainer?.nativeElement) return;
 
     const containerRect = this.svgContainer.nativeElement.getBoundingClientRect();
     const currentPoint: Point = {
@@ -200,8 +209,21 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
       y: event.clientY - containerRect.top,
     };
 
-    const path = this.svgConnectorService.createDragPath(this.dragStartPoint, currentPoint);
-    this.dragPath.set(path);
+    // Handle new connection dragging
+    if (this.isDragging && this.dragStartPoint) {
+      const path = this.svgConnectorService.createDragPath(this.dragStartPoint, currentPoint);
+      this.dragPath.set(path);
+      return;
+    }
+
+    // Handle endpoint dragging
+    if (this.isEndpointDragging && this.endpointDragAnchorPoint) {
+      // Show drag path from anchor to cursor
+      const path = this.endpointDragType === 'source'
+        ? this.svgConnectorService.createDragPath(currentPoint, this.endpointDragAnchorPoint)
+        : this.svgConnectorService.createDragPath(this.endpointDragAnchorPoint, currentPoint);
+      this.dragPath.set(path);
+    }
   }
 
   @HostListener('document:mouseup', ['$event'])
@@ -213,9 +235,71 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
       this.dragStartPoint = null;
       document.body.style.cursor = '';
     }
+
+    if (this.isEndpointDragging) {
+      this.cancelEndpointDrag();
+    }
+  }
+
+  onEndpointDragStart(
+    connection: VisualConnection,
+    endpointType: 'source' | 'target',
+    sourceIndex: number,
+    event: MouseEvent
+  ): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    if (!this.svgContainer?.nativeElement) return;
+
+    this.isEndpointDragging = true;
+    this.endpointDragMappingId = connection.mappingId;
+    this.endpointDragType = endpointType;
+    this.endpointDragSourceIndex = sourceIndex;
+
+    // Set anchor point (the point that stays fixed)
+    if (endpointType === 'source') {
+      // Moving source, anchor is the target
+      this.endpointDragAnchorPoint = connection.targetPoint;
+    } else {
+      // Moving target, anchor is the first source (or merge point for multi-source)
+      this.endpointDragAnchorPoint = connection.sourcePoints[0];
+    }
+
+    // Update MappingService drag state so schema-tree can detect endpoint dragging
+    this.mappingService.startEndpointDrag(
+      connection.mappingId,
+      endpointType,
+      endpointType === 'source' ? connection.sourcePoints[sourceIndex] : connection.targetPoint,
+      sourceIndex
+    );
+
+    document.body.style.cursor = 'grabbing';
+    this.updateConnections();  // Update to show connection as being dragged
+  }
+
+  private cancelEndpointDrag(): void {
+    this.dragPath.set(null);
+    this.isEndpointDragging = false;
+    this.endpointDragMappingId = null;
+    this.endpointDragType = null;
+    this.endpointDragSourceIndex = null;
+    this.endpointDragAnchorPoint = null;
+    document.body.style.cursor = '';
+    this.mappingService.endDrag();  // Reset MappingService drag state
+    this.updateConnections();  // Update to restore connection visibility
   }
 
   onFieldDrop(event: FieldPositionEvent): void {
+    // Handle endpoint drag completion (drop on target field)
+    if (this.isEndpointDragging && this.endpointDragMappingId && this.endpointDragType === 'target') {
+      this.mappingService.changeTargetField(this.endpointDragMappingId, event.field);
+      this.mappingsChange.emit(this.mappingService.allMappings());
+      this.updateConnections();
+      this.cancelEndpointDrag();
+      return;
+    }
+
     if (!this.dragSourceField) return;
 
     // Create mapping
@@ -233,6 +317,20 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
     this.dragStartPoint = null;
     this.dragPath.set(null);
     document.body.style.cursor = '';
+  }
+
+  onSourceFieldDrop(event: FieldPositionEvent): void {
+    // Handle endpoint drag completion (drop on source field)
+    if (this.isEndpointDragging && this.endpointDragMappingId && this.endpointDragType === 'source') {
+      this.mappingService.changeSourceField(
+        this.endpointDragMappingId,
+        event.field,
+        this.endpointDragSourceIndex ?? undefined
+      );
+      this.mappingsChange.emit(this.mappingService.allMappings());
+      this.updateConnections();
+      this.cancelEndpointDrag();
+    }
   }
 
   onConnectionClick(connection: VisualConnection, event: MouseEvent): void {
@@ -429,6 +527,7 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
         id: `conn-${mapping.id}`,
         mappingId: mapping.id,
         paths,
+        sourcePoints,
         midPoint,
         targetPoint,
         hasTransformation: mapping.transformations.length > 1 || mapping.transformations[0]?.type !== 'direct',
@@ -436,6 +535,7 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
         isArrayMapping: mapping.isArrayMapping || false,
         isArrayToObjectMapping: mapping.isArrayToObjectMapping || false,
         hasFilter,
+        isBeingDragged: mapping.id === this.endpointDragMappingId,
       });
     }
 

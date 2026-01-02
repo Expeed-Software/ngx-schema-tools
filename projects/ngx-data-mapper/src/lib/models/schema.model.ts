@@ -160,6 +160,10 @@ export interface DragState {
   sourceField: SchemaField | null;
   startPoint: { x: number; y: number } | null;
   currentPoint: { x: number; y: number } | null;
+  // For endpoint dragging (moving existing connection)
+  dragMode: 'new' | 'move-source' | 'move-target';
+  mappingId?: string;  // The mapping being modified when moving endpoint
+  sourceFieldIndex?: number;  // For multi-source mappings, which source is being moved
 }
 
 export interface DefaultValue {
