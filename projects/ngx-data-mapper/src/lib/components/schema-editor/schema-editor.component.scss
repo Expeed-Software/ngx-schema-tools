@@ -221,6 +221,7 @@
 
 .fields-list {
   display: block;
+  width: 100%;
   min-height: 50px;
 
   .field-wrapper {
@@ -233,11 +234,11 @@
   align-items: center;
   gap: var(--schema-editor-spacing-sm);
   padding: var(--schema-editor-spacing-sm) 12px;
-  padding-left: calc(12px + var(--level, 0) * 24px);
   background: var(--schema-editor-field-bg);
   border-radius: var(--schema-editor-field-border-radius);
   border: 1px solid transparent;
   transition: all 0.15s ease;
+  box-sizing: border-box;
 
   &:hover {
     background: var(--schema-editor-field-bg-hover);
@@ -256,6 +257,23 @@
       background: #fef9c3;
     }
   }
+}
+
+// Left section of field item
+.field-left {
+  display: flex;
+  align-items: center;
+  gap: var(--schema-editor-spacing-sm);
+  flex-shrink: 0;
+}
+
+// Right section of field item
+.field-right {
+  display: flex;
+  align-items: center;
+  gap: var(--schema-editor-spacing-sm);
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 // Drag handle for reordering
@@ -288,6 +306,8 @@
 // Field wrapper for drag-drop
 .field-wrapper {
   display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 // Custom drag preview - use ::ng-deep because CDK renders it outside component scope
@@ -493,7 +513,8 @@
   border-radius: 6px;
   outline: none;
   background: #f8fafc;
-  min-width: 100px;
+  min-width: 80px;
+  max-width: 100%;
   transition: all 0.15s ease;
 
   &:focus {
@@ -543,11 +564,15 @@
 .field-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 4px;
+  width: 128px;
+  flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.15s ease;
 
-  .field-item:hover & {
+  .field-item:hover &,
+  .field-right:hover & {
     opacity: 1;
   }
 
@@ -569,16 +594,20 @@
 }
 
 .nested-fields {
-  margin-left: calc(var(--level, 0) * 24px + 24px);
-  padding-left: 16px;
-  border-left: 2px solid #e2e8f0;
   display: block;
   min-height: 30px;
   margin-top: 4px;
   margin-bottom: 8px;
+  padding-left: 32px;
 
   .field-wrapper {
     margin-bottom: 4px;
+  }
+
+  // Reduce margin for editors inside nested fields (container already has 32px padding)
+  .allowed-values-editor,
+  .default-value-editor {
+    margin-left: 16px;
   }
 }
 
@@ -597,7 +626,7 @@
 
 // Allowed Values Editor
 .allowed-values-editor {
-  margin-left: calc(var(--level, 0) * 24px + 48px);
+  margin-left: 48px;
   margin-top: 4px;
   margin-bottom: 8px;
   padding: 12px;
@@ -718,7 +747,7 @@
 
 // Default Value Editor
 .default-value-editor {
-  margin-left: calc(var(--level, 0) * 24px + 48px);
+  margin-left: 48px;
   margin-top: 4px;
   margin-bottom: 8px;
   padding: 12px;

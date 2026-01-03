@@ -719,4 +719,11 @@ export class SchemaEditorComponent {
       this.jsonError.set((e as Error).message);
     }
   }
+
+  copyJson(): void {
+    const text = this.jsonText();
+    navigator.clipboard.writeText(text).catch(err => {
+      console.error('Failed to copy JSON to clipboard:', err);
+    });
+  }
 }
