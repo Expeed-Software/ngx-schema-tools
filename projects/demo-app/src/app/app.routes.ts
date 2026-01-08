@@ -33,6 +33,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'schema-creator',
+        loadComponent: () =>
+          import('./pages/schema-creator-page/schema-creator-page.component').then(
+            (m) => m.SchemaCreatorPageComponent
+          ),
+      },
+      {
         path: 'mapper/:id',
         loadComponent: () =>
           import('./pages/mapper-page/mapper-page.component').then(

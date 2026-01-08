@@ -1,6 +1,8 @@
 <div class="schema-tree" [class.source]="side === 'source'" [class.target]="side === 'target'">
   <div class="schema-header">
-    <span class="schema-title">{{ schema.name }}</span>
+    @if (showSchemaName) {
+      <span class="schema-title">{{ schema.name }}</span>
+    }
     <span class="schema-badge">{{ side === 'source' ? 'Source' : 'Target' }}</span>
   </div>
 

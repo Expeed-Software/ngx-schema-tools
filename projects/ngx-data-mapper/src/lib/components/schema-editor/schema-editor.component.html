@@ -1,18 +1,20 @@
 <div class="schema-editor">
   <!-- Schema Header -->
   <div class="editor-header">
-    <div class="schema-name-section">
-      <mat-form-field appearance="outline" class="schema-name-field">
-        <mat-label>Schema Name</mat-label>
-        <input
-          #schemaNameInput
-          matInput
-          [value]="schemaName()"
-          (input)="onSchemaNameChange($any($event.target).value, schemaNameInput)"
-          placeholder="Enter schema name"
-        />
-      </mat-form-field>
-    </div>
+    @if (showSchemaName) {
+      <div class="schema-name-section">
+        <mat-form-field appearance="outline" class="schema-name-field">
+          <mat-label>Schema Name</mat-label>
+          <input
+            #schemaNameInput
+            matInput
+            [value]="schemaName()"
+            (input)="onSchemaNameChange($any($event.target).value, schemaNameInput)"
+            placeholder="Enter schema name"
+          />
+        </mat-form-field>
+      </div>
+    }
 
     @if (showJsonToggle) {
       <mat-button-toggle-group [value]="viewMode()" (change)="setViewMode($event.value)" class="view-toggle">

@@ -35,6 +35,7 @@ export class SchemaTreeComponent implements AfterViewInit, OnDestroy {
   @Input() side: 'source' | 'target' = 'source';
   @Input() mappings: FieldMapping[] = [];
   @Input() defaultValues: DefaultValue[] = [];
+  @Input() showSchemaName: boolean = true;
 
   @Output() fieldDragStart = new EventEmitter<FieldPositionEvent>();
   @Output() fieldDragEnd = new EventEmitter<void>();

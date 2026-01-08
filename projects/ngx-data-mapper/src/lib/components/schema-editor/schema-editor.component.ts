@@ -84,6 +84,7 @@ export class SchemaEditorComponent {
   }
 
   @Input() showJsonToggle = true;
+  @Input() showSchemaName = true;
 
   @Output() schemaChange = new EventEmitter<JsonSchema>();
   @Output() save = new EventEmitter<JsonSchema>();

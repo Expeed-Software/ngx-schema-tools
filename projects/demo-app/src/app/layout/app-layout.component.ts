@@ -70,6 +70,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
               <mat-icon>swap_horiz</mat-icon>
               <span [class.hidden]="collapsed()">Mappings</span>
             </a>
+            <a
+              class="nav-item"
+              routerLink="/schema-creator"
+              routerLinkActive="active"
+              [matTooltip]="collapsed() ? 'Schema Creator' : ''"
+              matTooltipPosition="right"
+            >
+              <mat-icon>add_box</mat-icon>
+              <span [class.hidden]="collapsed()">Schema Creator</span>
+            </a>
           </div>
         </nav>
 
