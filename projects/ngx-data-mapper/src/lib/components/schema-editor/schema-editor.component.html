@@ -180,7 +180,7 @@
               <div class="field-right">
                 <!-- Type Selector -->
                 <mat-form-field appearance="outline" class="type-selector">
-                  <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)">
+                  <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)" panelClass="schema-editor-select-panel">
                     @for (type of fieldTypes; track type.value) {
                       <mat-option [value]="type.value">
                         <mat-icon>{{ type.icon }}</mat-icon>
@@ -194,7 +194,7 @@
                 @if (showDisplayType) {
                   @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
                     <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
-                      <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+                      <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)" panelClass="schema-editor-select-panel">
                         @for (dt of getDisplayTypes(field.type); track dt.value) {
                           <mat-option [value]="dt.value">
                             <mat-icon>{{ dt.icon }}</mat-icon>
@@ -513,7 +513,7 @@
     <!-- Right section: type and actions (fixed position) -->
     <div class="field-right">
       <mat-form-field appearance="outline" class="type-selector">
-        <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)">
+        <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange(field, $event.value)" panelClass="schema-editor-select-panel">
           @for (type of fieldTypes; track type.value) {
             <mat-option [value]="type.value">
               <mat-icon>{{ type.icon }}</mat-icon>
@@ -527,7 +527,7 @@
       @if (showDisplayType) {
         @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
           <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
-            <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+            <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)" panelClass="schema-editor-select-panel">
               @for (dt of getDisplayTypes(field.type); track dt.value) {
                 <mat-option [value]="dt.value">
                   <mat-icon>{{ dt.icon }}</mat-icon>
