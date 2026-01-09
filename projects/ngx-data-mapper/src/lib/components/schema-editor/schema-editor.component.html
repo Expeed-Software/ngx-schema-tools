@@ -79,7 +79,7 @@
         (cdkDropListDropped)="onFieldDrop($event)"
       >
         @for (field of fields(); track field.id) {
-          <div class="field-wrapper" cdkDrag>
+          <div class="field-wrapper" cdkDrag [attr.data-field-name]="field.name" [attr.data-field-type]="field.type">
             <!-- Drag Placeholder -->
             <div class="drag-placeholder" *cdkDragPlaceholder></div>
 
@@ -190,18 +190,22 @@
                   </mat-select>
                 </mat-form-field>
 
-                <!-- Display Type Selector (only for string type) -->
-                @if (showDisplayType && field.type === 'string') {
-                  <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
-                    <mat-select [value]="field.displayType || 'textbox'" (selectionChange)="onDisplayTypeChange(field, $event.value)">
-                      @for (displayType of displayTypes; track displayType.value) {
-                        <mat-option [value]="displayType.value">
-                          <mat-icon>{{ displayType.icon }}</mat-icon>
-                          {{ displayType.label }}
-                        </mat-option>
-                      }
-                    </mat-select>
-                  </mat-form-field>
+                <!-- Display Type Selector (for string, number, boolean, date, time types) -->
+                @if (showDisplayType) {
+                  @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
+                    <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
+                      <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+                        @for (dt of getDisplayTypes(field.type); track dt.value) {
+                          <mat-option [value]="dt.value">
+                            <mat-icon>{{ dt.icon }}</mat-icon>
+                            {{ dt.label }}
+                          </mat-option>
+                        }
+                      </mat-select>
+                    </mat-form-field>
+                  } @else {
+                    <div class="display-type-placeholder"></div>
+                  }
                 }
 
                 <!-- Actions -->
@@ -333,7 +337,7 @@
               >
                 @if (field.children.length > 0) {
                   @for (child of field.children; track child.id) {
-                    <div class="field-wrapper" cdkDrag>
+                    <div class="field-wrapper" cdkDrag [attr.data-field-name]="child.name" [attr.data-field-type]="child.type" [attr.data-parent]="field.name">
                       <div class="drag-placeholder" *cdkDragPlaceholder></div>
                       <div *cdkDragPreview class="drag-preview">
                         <mat-icon>{{ getTypeIcon(child.type) }}</mat-icon>
@@ -519,18 +523,22 @@
         </mat-select>
       </mat-form-field>
 
-      <!-- Display Type Selector (only for string type) -->
-      @if (showDisplayType && field.type === 'string') {
-        <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
-          <mat-select [value]="field.displayType || 'textbox'" (selectionChange)="onDisplayTypeChange(field, $event.value)">
-            @for (displayType of displayTypes; track displayType.value) {
-              <mat-option [value]="displayType.value">
-                <mat-icon>{{ displayType.icon }}</mat-icon>
-                {{ displayType.label }}
-              </mat-option>
-            }
-          </mat-select>
-        </mat-form-field>
+      <!-- Display Type Selector (for string, number, boolean, date, time types) -->
+      @if (showDisplayType) {
+        @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
+          <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
+            <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+              @for (dt of getDisplayTypes(field.type); track dt.value) {
+                <mat-option [value]="dt.value">
+                  <mat-icon>{{ dt.icon }}</mat-icon>
+                  {{ dt.label }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else {
+          <div class="display-type-placeholder"></div>
+        }
       }
 
       <div class="field-actions">

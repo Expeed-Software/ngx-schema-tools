@@ -1,6 +1,6 @@
 {
   "name": "@expeed/ngx-data-mapper",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "Visual data mapping components for Angular - drag-and-drop field mapping with transformations, schema editor with JSON Schema export",
   "keywords": [
     "angular",

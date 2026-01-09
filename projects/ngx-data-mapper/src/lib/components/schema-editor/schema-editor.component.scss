@@ -567,6 +567,12 @@
   width: 130px;
 }
 
+.display-type-placeholder {
+  width: 130px;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
 .field-actions {
   display: flex;
   align-items: center;

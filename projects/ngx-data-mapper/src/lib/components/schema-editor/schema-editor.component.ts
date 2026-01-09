@@ -19,13 +19,14 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { JsonSchema } from '../../models/json-schema.model';
 
 // Display type options for form rendering
-type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext';
+type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle';
 
 // Internal representation for UI editing
 interface EditorField {
   id: string;
   name: string;
-  type: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array';
+  type: 'string' | 'number' | 'boolean' | 'date' | 'time' | 'object' | 'array';
+  format?: string; // Preserves JSON Schema format (email, uri, uuid, etc.)
   displayType?: DisplayType;
   description?: string;
   required?: boolean;
@@ -107,16 +108,46 @@ export class SchemaEditorComponent {
     { value: 'number', label: 'Number', icon: 'pin' },
     { value: 'boolean', label: 'Boolean', icon: 'toggle_on' },
     { value: 'date', label: 'Date', icon: 'calendar_today' },
+    { value: 'time', label: 'Time', icon: 'schedule' },
     { value: 'object', label: 'Object', icon: 'data_object' },
     { value: 'array', label: 'Array', icon: 'data_array' },
   ];
 
-  displayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+  stringDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
     { value: 'textbox', label: 'Textbox', icon: 'edit' },
     { value: 'dropdown', label: 'Dropdown', icon: 'arrow_drop_down_circle' },
     { value: 'textarea', label: 'Textarea', icon: 'notes' },
     { value: 'richtext', label: 'Rich Text', icon: 'format_color_text' },
   ];
+
+  dateDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'datepicker', label: 'Date Picker', icon: 'calendar_today' },
+    { value: 'datetimepicker', label: 'DateTime Picker', icon: 'schedule' },
+    { value: 'textbox', label: 'Textbox', icon: 'edit' },
+  ];
+
+  timeDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'timepicker', label: 'Time Picker', icon: 'schedule' },
+    { value: 'textbox', label: 'Textbox', icon: 'edit' },
+  ];
+
+  numberDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'textbox', label: 'Textbox', icon: 'edit' },
+    { value: 'stepper', label: 'Stepper', icon: 'unfold_more' },
+  ];
+
+  booleanDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'checkbox', label: 'Checkbox', icon: 'check_box' },
+    { value: 'toggle', label: 'Toggle', icon: 'toggle_on' },
+  ];
+
+  getDisplayTypes(fieldType: string): Array<{ value: DisplayType; label: string; icon: string }> {
+    if (fieldType === 'date') return this.dateDisplayTypes;
+    if (fieldType === 'time') return this.timeDisplayTypes;
+    if (fieldType === 'number') return this.numberDisplayTypes;
+    if (fieldType === 'boolean') return this.booleanDisplayTypes;
+    return this.stringDisplayTypes;
+  }
 
   private generateId(): string {
     return `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -236,9 +267,17 @@ export class SchemaEditorComponent {
     if ((type === 'object' || type === 'array') && !field.children) {
       field.children = [];
     }
-    // Set default display type for string, clear for other types
+    // Set default display type based on field type
     if (type === 'string') {
-      field.displayType = field.displayType || 'textbox';
+      field.displayType = 'textbox';
+    } else if (type === 'number') {
+      field.displayType = 'textbox';
+    } else if (type === 'boolean') {
+      field.displayType = 'checkbox';
+    } else if (type === 'date') {
+      field.displayType = 'datepicker';
+    } else if (type === 'time') {
+      field.displayType = 'timepicker';
     } else {
       field.displayType = undefined;
     }
@@ -544,11 +583,33 @@ export class SchemaEditorComponent {
   }
 
   private jsonSchemaPropertyToEditorField(name: string, schema: JsonSchema, isRequired: boolean): EditorField {
+    const fieldType = this.jsonSchemaTypeToEditorType(schema);
+    // Set displayType for string, number, boolean, date, and time fields
+    let displayType: DisplayType | undefined;
+    if (fieldType === 'string') {
+      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'textbox';
+    } else if (fieldType === 'number') {
+      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'textbox';
+    } else if (fieldType === 'boolean') {
+      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'checkbox';
+    } else if (fieldType === 'date') {
+      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'datepicker';
+    } else if (fieldType === 'time') {
+      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'timepicker';
+    }
+
+    // Preserve format for string types (not date/time which have dedicated field types)
+    let format: string | undefined;
+    if (fieldType === 'string' && schema.format) {
+      format = schema.format;
+    }
+
     const field: EditorField = {
       id: this.generateId(),
       name,
-      type: this.jsonSchemaTypeToEditorType(schema),
-      displayType: (schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined,
+      type: fieldType,
+      format,
+      displayType,
       description: schema.description,
       required: isRequired,
       allowedValues: schema.enum as string[] | undefined,
@@ -570,6 +631,9 @@ export class SchemaEditorComponent {
   private jsonSchemaTypeToEditorType(schema: JsonSchema): EditorField['type'] {
     if (schema.format === 'date' || schema.format === 'date-time') {
       return 'date';
+    }
+    if (schema.format === 'time') {
+      return 'time';
     }
     const type = Array.isArray(schema.type) ? schema.type[0] : schema.type;
     switch (type) {
@@ -630,6 +694,9 @@ export class SchemaEditorComponent {
     if (field.type === 'date') {
       schema['type'] = 'string';
       schema['format'] = 'date-time';
+    } else if (field.type === 'time') {
+      schema['type'] = 'string';
+      schema['format'] = 'time';
     } else if (field.type === 'array') {
       schema['type'] = 'array';
       if (field.children && field.children.length > 0) {
@@ -673,6 +740,10 @@ export class SchemaEditorComponent {
       }
     } else {
       schema['type'] = field.type;
+      // Preserve format for string types (email, uri, uuid, etc.)
+      if (field.type === 'string' && field.format) {
+        schema['format'] = field.format;
+      }
     }
 
     // Add description
