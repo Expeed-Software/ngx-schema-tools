@@ -95,6 +95,7 @@
       @if (selectedSchema()) {
         <schema-editor
           [schema]="selectedSchema()!"
+          [showDisplayType]="true"
           (schemaChange)="onSchemaChange($event)"
         ></schema-editor>
       } @else {

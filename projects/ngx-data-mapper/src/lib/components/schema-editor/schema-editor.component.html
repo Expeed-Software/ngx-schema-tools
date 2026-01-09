@@ -172,6 +172,7 @@
                 class="description-input"
                 [value]="field.description || ''"
                 (input)="onDescriptionChange(field, $any($event.target).value)"
+                (blur)="onDescriptionBlur()"
                 placeholder="Description..."
               />
 
@@ -188,6 +189,20 @@
                     }
                   </mat-select>
                 </mat-form-field>
+
+                <!-- Display Type Selector (only for string type) -->
+                @if (showDisplayType && field.type === 'string') {
+                  <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
+                    <mat-select [value]="field.displayType || 'textbox'" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+                      @for (displayType of displayTypes; track displayType.value) {
+                        <mat-option [value]="displayType.value">
+                          <mat-icon>{{ displayType.icon }}</mat-icon>
+                          {{ displayType.label }}
+                        </mat-option>
+                      }
+                    </mat-select>
+                  </mat-form-field>
+                }
 
                 <!-- Actions -->
                 <div class="field-actions">
@@ -487,6 +502,7 @@
       class="description-input"
       [value]="field.description || ''"
       (input)="onDescriptionChange(field, $any($event.target).value)"
+                (blur)="onDescriptionBlur()"
       placeholder="Description..."
     />
 
@@ -502,6 +518,20 @@
           }
         </mat-select>
       </mat-form-field>
+
+      <!-- Display Type Selector (only for string type) -->
+      @if (showDisplayType && field.type === 'string') {
+        <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
+          <mat-select [value]="field.displayType || 'textbox'" (selectionChange)="onDisplayTypeChange(field, $event.value)">
+            @for (displayType of displayTypes; track displayType.value) {
+              <mat-option [value]="displayType.value">
+                <mat-icon>{{ displayType.icon }}</mat-icon>
+                {{ displayType.label }}
+              </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      }
 
       <div class="field-actions">
         @if (field.type === 'object' || field.type === 'array') {

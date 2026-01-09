@@ -18,11 +18,15 @@ import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { JsonSchema } from '../../models/json-schema.model';
 
+// Display type options for form rendering
+type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext';
+
 // Internal representation for UI editing
 interface EditorField {
   id: string;
   name: string;
   type: 'string' | 'number' | 'boolean' | 'date' | 'object' | 'array';
+  displayType?: DisplayType;
   description?: string;
   required?: boolean;
   defaultValue?: string | number | boolean;
@@ -85,6 +89,7 @@ export class SchemaEditorComponent {
 
   @Input() showJsonToggle = true;
   @Input() showSchemaName = true;
+  @Input() showDisplayType = false;
 
   @Output() schemaChange = new EventEmitter<JsonSchema>();
   @Output() save = new EventEmitter<JsonSchema>();
@@ -104,6 +109,13 @@ export class SchemaEditorComponent {
     { value: 'date', label: 'Date', icon: 'calendar_today' },
     { value: 'object', label: 'Object', icon: 'data_object' },
     { value: 'array', label: 'Array', icon: 'data_array' },
+  ];
+
+  displayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'textbox', label: 'Textbox', icon: 'edit' },
+    { value: 'dropdown', label: 'Dropdown', icon: 'arrow_drop_down_circle' },
+    { value: 'textarea', label: 'Textarea', icon: 'notes' },
+    { value: 'richtext', label: 'Rich Text', icon: 'format_color_text' },
   ];
 
   private generateId(): string {
@@ -127,6 +139,7 @@ export class SchemaEditorComponent {
       id: this.generateId(),
       name: '',
       type: 'string',
+      displayType: 'textbox',
       isEditing: true,
       expanded: false,
     };
@@ -144,6 +157,7 @@ export class SchemaEditorComponent {
       id: this.generateId(),
       name: '',
       type: 'string',
+      displayType: 'textbox',
       isEditing: true,
     };
     parent.children.push(newField);
@@ -222,6 +236,19 @@ export class SchemaEditorComponent {
     if ((type === 'object' || type === 'array') && !field.children) {
       field.children = [];
     }
+    // Set default display type for string, clear for other types
+    if (type === 'string') {
+      field.displayType = field.displayType || 'textbox';
+    } else {
+      field.displayType = undefined;
+    }
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Handle display type change
+  onDisplayTypeChange(field: EditorField, displayType: string): void {
+    field.displayType = displayType as DisplayType;
     this.fields.update(fields => [...fields]);
     this.emitChange();
   }
@@ -233,10 +260,13 @@ export class SchemaEditorComponent {
     this.emitChange();
   }
 
-  // Update field description
+  // Update field description (only update the field, don't trigger re-render)
   onDescriptionChange(field: EditorField, description: string): void {
     field.description = description;
-    this.fields.update(fields => [...fields]);
+  }
+
+  // Emit change when description input loses focus
+  onDescriptionBlur(): void {
     this.emitChange();
   }
 
@@ -518,6 +548,7 @@ export class SchemaEditorComponent {
       id: this.generateId(),
       name,
       type: this.jsonSchemaTypeToEditorType(schema),
+      displayType: (schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined,
       description: schema.description,
       required: isRequired,
       allowedValues: schema.enum as string[] | undefined,
@@ -657,6 +688,11 @@ export class SchemaEditorComponent {
     // Add default value
     if (field.defaultValue !== undefined) {
       schema['default'] = field.defaultValue;
+    }
+
+    // Add display type (custom extension)
+    if (field.displayType) {
+      schema['x-display-type'] = field.displayType;
     }
 
     return schema;
