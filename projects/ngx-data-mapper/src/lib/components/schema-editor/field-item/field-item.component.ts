@@ -80,6 +80,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
   @Output() fieldChange = new EventEmitter<void>();
   @Output() delete = new EventEmitter<EditorField>();
   @Output() duplicate = new EventEmitter<EditorField>();
+  @Output() outdent = new EventEmitter<EditorField>();
 
   fieldTypes: Array<{ value: string; label: string; icon: string }> = [
     { value: 'string', label: 'String', icon: 'text_fields' },
@@ -285,8 +286,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
   }
 
   onChildFieldChange(): void {
-    console.log('onChildFieldChange called on parent');
-    this.cdr.detectChanges();
+    // Just propagate the change up - don't force detectChanges as it can reset expanded state
     this.fieldChange.emit();
   }
 
@@ -329,7 +329,8 @@ export class FieldItemComponent implements OnInit, OnChanges {
   onFieldDrop(event: CdkDragDrop<EditorField[]>): void {
     if (event.previousIndex !== event.currentIndex && this.field.children) {
       moveItemInArray(this.field.children, event.previousIndex, event.currentIndex);
-      this.fieldChange.emit();
+      // Don't emit fieldChange for reorder - array is mutated in place
+      // and emitting causes parent re-render which resets expanded state
     }
   }
 
@@ -350,7 +351,31 @@ export class FieldItemComponent implements OnInit, OnChanges {
     if (!prevSibling.children) prevSibling.children = [];
     prevSibling.children.push(this.field);
     prevSibling.expanded = true;
-    this.fieldChange.emit();
+    // Don't emit fieldChange - arrays are mutated in place
+  }
+
+  canOutdent(): boolean {
+    return this.level > 0;
+  }
+
+  outdentField(): void {
+    if (this.level <= 0) return;
+    this.outdent.emit(this.field);
+  }
+
+  onChildOutdent(child: EditorField): void {
+    if (!this.field.children) return;
+    const childIndex = this.field.children.indexOf(child);
+    if (childIndex === -1) return;
+
+    // Remove child from this field's children
+    this.field.children.splice(childIndex, 1);
+
+    // Add to parent list after this field
+    const myIndex = this.parentList.indexOf(this.field);
+    this.parentList.splice(myIndex + 1, 0, child);
+
+    // Don't emit fieldChange - arrays are mutated in place
   }
 
   toggleValuesEditor(): void {

@@ -3,27 +3,49 @@
     class="field-item"
     [class.is-complex]="field.type === 'object' || field.type === 'array'"
   >
-    <!-- Expand/Collapse - outside field-left to avoid drag interference -->
-    @if (field.type === 'object' || field.type === 'array') {
-      <button
-        mat-icon-button
-        type="button"
-        class="expand-btn"
-        (click)="handleExpandClick()"
-        [matTooltip]="localExpanded() ? 'Collapse' : 'Expand'"
-      >
-        <mat-icon>{{ localExpanded() ? 'expand_more' : 'chevron_right' }}</mat-icon>
-      </button>
-    } @else {
-      <span class="expand-placeholder"></span>
-    }
-
     <!-- Left section: field controls -->
     <div class="field-left">
-      <!-- Drag Handle -->
+      <!-- Drag Handle (leftmost) -->
       <div class="drag-handle" cdkDragHandle matTooltip="Drag to reorder">
         <mat-icon>drag_indicator</mat-icon>
       </div>
+
+      <!-- Indent/Outdent Button (show one or the other) -->
+      <div class="indent-buttons">
+        @if (level > 0) {
+          <button
+            class="indent-btn"
+            (click)="outdentField()"
+            matTooltip="Outdent (move to parent level)"
+          >
+            <mat-icon>format_indent_decrease</mat-icon>
+          </button>
+        } @else {
+          <button
+            class="indent-btn"
+            [disabled]="!canIndent()"
+            (click)="indentField()"
+            matTooltip="Indent (make child of previous sibling)"
+          >
+            <mat-icon>format_indent_increase</mat-icon>
+          </button>
+        }
+      </div>
+
+      <!-- Expand/Collapse -->
+      @if (field.type === 'object' || field.type === 'array') {
+        <button
+          mat-icon-button
+          type="button"
+          class="expand-btn"
+          (click)="handleExpandClick()"
+          [matTooltip]="localExpanded() ? 'Collapse' : 'Expand'"
+        >
+          <mat-icon>{{ localExpanded() ? 'expand_more' : 'chevron_right' }}</mat-icon>
+        </button>
+      } @else {
+        <span class="expand-placeholder"></span>
+      }
 
       <!-- Type Icon -->
       <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
@@ -323,6 +345,7 @@
             (fieldChange)="onChildFieldChange()"
             (delete)="onChildDelete($event)"
             (duplicate)="onChildDuplicate($event)"
+            (outdent)="onChildOutdent($event)"
           >
             <!-- Drag Placeholder -->
             <div class="drag-placeholder" *cdkDragPlaceholder></div>

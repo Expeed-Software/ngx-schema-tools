@@ -189,14 +189,8 @@ export class SchemaEditorComponent {
 
   // Handle field change from FieldItemComponent
   onFieldChange(): void {
-    console.log('schema-editor onFieldChange called');
-    this.fields().forEach(f => {
-      if (f.type === 'object' || f.type === 'array') {
-        console.log(`  field "${f.name}" expanded:${f.expanded} children:${f.children?.length}`);
-      }
-    });
-    this.fields.update(fields => [...fields]);
-    this.appRef.tick();
+    // Just emit the change - field objects are mutated in place
+    // Don't recreate array or force tick as it causes expanded state to reset
     this.emitChange();
   }
 
