@@ -295,8 +295,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
       const index = this.field.children.indexOf(child);
       if (index > -1) {
         this.field.children.splice(index, 1);
-        this.cdr.detectChanges();
-        this.fieldChange.emit();
+        // Don't emit fieldChange - array is mutated in place
       }
     }
   }
@@ -312,8 +311,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
           children: child.children ? this.cloneFields(child.children) : undefined,
         };
         this.field.children.splice(index + 1, 0, clone);
-        this.cdr.detectChanges();
-        this.fieldChange.emit();
+        // Don't emit fieldChange - array is mutated in place
       }
     }
   }
