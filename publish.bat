@@ -7,11 +7,17 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Logging into npm...
-call npm login
+echo Checking npm login status...
+call npm whoami >nul 2>&1
 if %errorlevel% neq 0 (
-    echo npm login failed!
-    exit /b %errorlevel%
+    echo Not logged in. Logging into npm...
+    call npm login
+    if %errorlevel% neq 0 (
+        echo npm login failed!
+        exit /b %errorlevel%
+    )
+) else (
+    for /f %%i in ('npm whoami') do echo Logged in as: %%i
 )
 
 echo.
