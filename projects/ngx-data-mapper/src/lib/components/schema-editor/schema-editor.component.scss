@@ -245,7 +245,7 @@
     border-color: var(--schema-editor-border-color);
   }
 
-  &.is-editing {
+  &:focus-within {
     background: var(--schema-editor-field-bg-editing);
     border-color: var(--schema-editor-accent-primary);
   }
@@ -255,6 +255,11 @@
 
     &:hover {
       background: #fef9c3;
+    }
+
+    &:focus-within {
+      background: #fef3c7;
+      border-color: var(--schema-editor-accent-primary);
     }
   }
 }
@@ -307,7 +312,9 @@
 .field-wrapper {
   display: block;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 // Custom drag preview - use ::ng-deep because CDK renders it outside component scope
@@ -433,41 +440,30 @@
   flex-shrink: 0;
 }
 
-.field-name {
-  flex: 0 0 auto;
-  width: 150px;
+.array-indicator {
+  color: #f59e0b;
+  font-weight: 600;
   font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover {
-    background: #e2e8f0;
-  }
-
-  .array-indicator {
-    color: #f59e0b;
-    font-weight: 600;
-    margin-left: 2px;
-  }
+  margin-left: 2px;
 }
 
 .field-name-input {
   flex: 0 0 auto;
-  width: 150px;
+  width: 120px;
   font-size: 14px;
   font-weight: 500;
   color: #1e293b;
   padding: 6px 10px;
-  border: 2px solid #3b82f6;
+  border: 1px solid #e2e8f0;
   border-radius: 6px;
   outline: none;
-  background: white;
+  background: #f8fafc;
+  transition: all 0.15s ease;
+
+  &:focus {
+    border-color: #3b82f6;
+    background: white;
+  }
 
   &::placeholder {
     color: #94a3b8;
@@ -504,7 +500,7 @@
   }
 }
 
-.description-input {
+.label-input {
   flex: 1;
   font-size: 13px;
   color: #64748b;
@@ -514,7 +510,6 @@
   outline: none;
   background: #f8fafc;
   min-width: 80px;
-  max-width: 100%;
   transition: all 0.15s ease;
 
   &:focus {
@@ -530,9 +525,9 @@
 
 .type-selector,
 .display-type-selector {
-  width: 140px;
+  width: 130px;
   flex-shrink: 0;
-  margin-right: 8px;
+  margin-right: 4px;
 
   ::ng-deep {
     .mat-mdc-form-field-subscript-wrapper {
@@ -564,13 +559,13 @@
 }
 
 .display-type-selector {
-  width: 130px;
+  width: 120px;
 }
 
 .display-type-placeholder {
-  width: 130px;
+  width: 120px;
   flex-shrink: 0;
-  margin-right: 8px;
+  margin-right: 4px;
 }
 
 // Dropdown panel styles (rendered in CDK overlay outside component)
@@ -601,10 +596,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 4px;
-  width: 128px;
+  gap: 2px;
+  width: 168px;
   flex-shrink: 0;
-  margin-left: 8px;
+  margin-left: 4px;
   opacity: 0;
   transition: opacity 0.15s ease;
 
@@ -643,7 +638,8 @@
 
   // Reduce margin for editors inside nested fields (container already has 32px padding)
   .allowed-values-editor,
-  .default-value-editor {
+  .default-value-editor,
+  .validators-editor {
     margin-left: 16px;
   }
 }
@@ -779,6 +775,102 @@
 
   .has-default {
     color: #8b5cf6 !important;
+  }
+
+  .has-validators {
+    color: #3b82f6 !important;
+  }
+}
+
+// Validators Editor
+.validators-editor {
+  margin-left: 48px;
+  margin-right: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  width: calc(100% - 60px);
+
+  .validators-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .validators-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d4ed8;
+  }
+
+  .validators-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .validator-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+
+    label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #3b82f6;
+    }
+
+    &.pattern-field {
+      flex: 1 1 auto;
+      min-width: 80px;
+      overflow: hidden;
+    }
+  }
+
+  .validator-input,
+  .validator-select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    outline: none;
+    background: white;
+    width: 100px;
+    box-sizing: border-box !important;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  .validator-select {
+    cursor: pointer;
+    width: 120px;
+  }
+
+  .pattern-field .validator-input {
+    width: 100%;
+    box-sizing: border-box !important;
   }
 }
 

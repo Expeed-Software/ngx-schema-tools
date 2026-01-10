@@ -1,0 +1,347 @@
+<div class="field-wrapper">
+  <div
+    class="field-item"
+    [class.is-complex]="field.type === 'object' || field.type === 'array'"
+  >
+    <!-- Expand/Collapse - outside field-left to avoid drag interference -->
+    @if (field.type === 'object' || field.type === 'array') {
+      <button
+        mat-icon-button
+        type="button"
+        class="expand-btn"
+        (click)="handleExpandClick()"
+        [matTooltip]="localExpanded() ? 'Collapse' : 'Expand'"
+      >
+        <mat-icon>{{ localExpanded() ? 'expand_more' : 'chevron_right' }}</mat-icon>
+      </button>
+    } @else {
+      <span class="expand-placeholder"></span>
+    }
+
+    <!-- Left section: field controls -->
+    <div class="field-left">
+      <!-- Drag Handle -->
+      <div class="drag-handle" cdkDragHandle matTooltip="Drag to reorder">
+        <mat-icon>drag_indicator</mat-icon>
+      </div>
+
+      <!-- Type Icon -->
+      <mat-icon class="type-icon" [matTooltip]="field.type">{{ getTypeIcon(field.type) }}</mat-icon>
+
+      <!-- Field Name -->
+      <input
+        class="field-name-input"
+        [value]="field.name"
+        (input)="onFieldNameChange($event)"
+        (blur)="onFieldNameBlur()"
+        placeholder="Field name"
+        matTooltip="Property name in JSON Schema"
+      />
+      @if (field.type === 'array') {
+        <span class="array-indicator">[]</span>
+      }
+
+      <!-- Required Toggle -->
+      <button
+        class="required-btn"
+        [class.is-required]="field.required"
+        (click)="toggleRequired()"
+        [matTooltip]="field.required ? 'Required (click to make optional)' : 'Optional (click to make required)'"
+      >
+        <mat-icon>{{ field.required ? 'star' : 'star_border' }}</mat-icon>
+      </button>
+    </div>
+
+    <!-- Middle section: label (flexible) -->
+    <input
+      class="label-input"
+      [value]="field.label || ''"
+      (input)="onLabelChange($any($event.target).value)"
+      (blur)="onLabelBlur()"
+      placeholder="Label..."
+      matTooltip="Display label (stored as title)"
+    />
+
+    <!-- Right section: type and actions -->
+    <div class="field-right">
+      <!-- Type Selector -->
+      <mat-form-field appearance="outline" class="type-selector" matTooltip="Data type">
+        <mat-select [value]="field.type" (selectionChange)="onFieldTypeChange($event.value)" panelClass="schema-editor-select-panel">
+          @for (type of fieldTypes; track type.value) {
+            <mat-option [value]="type.value">
+              <mat-icon>{{ type.icon }}</mat-icon>
+              {{ type.label }}
+            </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Display Type Selector -->
+      @if (showDisplayType) {
+        @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
+          <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
+            <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange($event.value)" panelClass="schema-editor-select-panel">
+              @for (dt of getDisplayTypes(field.type); track dt.value) {
+                <mat-option [value]="dt.value">
+                  <mat-icon>{{ dt.icon }}</mat-icon>
+                  {{ dt.label }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else {
+          <div class="display-type-placeholder"></div>
+        }
+      }
+
+      <!-- Actions -->
+      <div class="field-actions">
+        @if (field.type === 'object' || canAddChildToArray()) {
+          <button
+            mat-icon-button
+            (click)="addChildField()"
+            [matTooltip]="field.type === 'array' ? 'Define item schema' : 'Add child field'"
+          >
+            <mat-icon>add_circle_outline</mat-icon>
+          </button>
+        }
+        @if (field.type === 'string' || field.type === 'number') {
+          <button
+            mat-icon-button
+            (click)="toggleValuesEditor()"
+            [matTooltip]="field.allowedValues?.length ? 'Edit allowed values (' + field.allowedValues!.length + ')' : 'Add allowed values'"
+            [class.has-values]="field.allowedValues?.length"
+          >
+            <mat-icon>list</mat-icon>
+          </button>
+        }
+        @if (field.type !== 'object' && field.type !== 'array') {
+          <button
+            mat-icon-button
+            (click)="toggleDefaultEditor()"
+            [matTooltip]="field.defaultValue !== undefined ? 'Default: ' + field.defaultValue : 'Set default value'"
+            [class.has-default]="field.defaultValue !== undefined"
+          >
+            <mat-icon>{{ field.defaultValue !== undefined ? 'label' : 'label_outline' }}</mat-icon>
+          </button>
+        }
+        @if (field.type === 'string' || field.type === 'number') {
+          <button
+            mat-icon-button
+            (click)="toggleValidatorsEditor()"
+            [matTooltip]="hasValidators() ? 'Edit validators' : 'Add validators'"
+            [class.has-validators]="hasValidators()"
+          >
+            <mat-icon>rule</mat-icon>
+          </button>
+        }
+        <button mat-icon-button [matMenuTriggerFor]="fieldMenu" matTooltip="More options">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #fieldMenu="matMenu">
+          <button mat-menu-item (click)="duplicateField()">
+            <mat-icon>content_copy</mat-icon>
+            <span>Duplicate</span>
+          </button>
+          <button mat-menu-item (click)="deleteField()" class="delete-action">
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+    </div>
+  </div>
+
+  <!-- Allowed Values Editor -->
+  @if (field.isEditingValues && (field.type === 'string' || field.type === 'number')) {
+    <div class="allowed-values-editor">
+      <div class="values-header">
+        <span class="values-label">Allowed values:</span>
+        <input
+          #valueInput
+          class="value-input"
+          type="text"
+          placeholder="Type value and press Enter"
+          (keydown)="onAllowedValueKeydown($event, valueInput)"
+        />
+        <button class="add-value-btn" (click)="addAllowedValue($event)" matTooltip="Add value">
+          <mat-icon>add</mat-icon>
+        </button>
+      </div>
+      @if (field.allowedValues && field.allowedValues.length > 0) {
+        <div class="values-list">
+          @for (value of field.allowedValues; track value; let vi = $index) {
+            <span class="value-chip">
+              {{ value }}
+              <button class="remove-value-btn" (click)="removeAllowedValue(vi)" matTooltip="Remove">
+                <mat-icon>close</mat-icon>
+              </button>
+            </span>
+          }
+        </div>
+      } @else {
+        <div class="no-values">No values defined yet</div>
+      }
+    </div>
+  }
+
+  <!-- Default Value Editor -->
+  @if (field.isEditingDefault && field.type !== 'object' && field.type !== 'array') {
+    <div class="default-value-editor">
+      <div class="default-header">
+        <span class="default-label">Default value:</span>
+        @if (field.type === 'boolean') {
+          <select
+            class="default-select"
+            [value]="field.defaultValue?.toString() || ''"
+            (change)="onDefaultValueChange($any($event.target).value)"
+          >
+            <option value="">No default</option>
+            <option value="true">true</option>
+            <option value="false">false</option>
+          </select>
+        } @else {
+          <input
+            class="default-input"
+            [type]="field.type === 'number' ? 'number' : 'text'"
+            [value]="field.defaultValue ?? ''"
+            (input)="onDefaultValueChange($any($event.target).value)"
+            (keydown)="onDefaultValueKeydown($event)"
+            placeholder="Enter default value"
+          />
+        }
+        @if (field.defaultValue !== undefined) {
+          <button class="clear-default-btn" (click)="clearDefaultValue()" matTooltip="Clear default">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Validators Editor -->
+  @if (field.isEditingValidators && (field.type === 'string' || field.type === 'number')) {
+    <div class="validators-editor">
+      <div class="validators-header">
+        <span class="validators-label">Validators:</span>
+      </div>
+      @if (field.type === 'string') {
+        <div class="validators-row">
+          <div class="validator-field">
+            <label>Format</label>
+            <select
+              class="validator-select"
+              [value]="field.format || ''"
+              (change)="onFormatChange($any($event.target).value)"
+            >
+              @for (fmt of stringFormats; track fmt.value) {
+                <option [value]="fmt.value">{{ fmt.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="validators-row">
+          <div class="validator-field">
+            <label>Min Length</label>
+            <input
+              type="number"
+              class="validator-input"
+              [value]="field.minLength ?? ''"
+              (input)="onMinLengthChange($any($event.target).value)"
+              placeholder="0"
+              min="0"
+            />
+          </div>
+          <div class="validator-field">
+            <label>Max Length</label>
+            <input
+              type="number"
+              class="validator-input"
+              [value]="field.maxLength ?? ''"
+              (input)="onMaxLengthChange($any($event.target).value)"
+              placeholder="∞"
+              min="0"
+            />
+          </div>
+          @if (!field.format) {
+            <div class="validator-field pattern-field">
+              <label>Pattern (regex)</label>
+              <input
+                type="text"
+                class="validator-input"
+                [value]="field.pattern ?? ''"
+                (input)="onPatternChange($any($event.target).value)"
+                placeholder="^[a-z]+$"
+              />
+            </div>
+          }
+        </div>
+      }
+      @if (field.type === 'number') {
+        <div class="validators-row">
+          <div class="validator-field">
+            <label>Minimum</label>
+            <input
+              type="number"
+              class="validator-input"
+              [value]="field.minimum ?? ''"
+              (input)="onMinimumChange($any($event.target).value)"
+              placeholder="-∞"
+            />
+          </div>
+          <div class="validator-field">
+            <label>Maximum</label>
+            <input
+              type="number"
+              class="validator-input"
+              [value]="field.maximum ?? ''"
+              (input)="onMaximumChange($any($event.target).value)"
+              placeholder="∞"
+            />
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Nested Children -->
+  @if ((field.type === 'object' || field.type === 'array') && (localExpanded() || field.expanded)) {
+    <div
+      class="nested-fields"
+      cdkDropList
+      [cdkDropListData]="field.children || []"
+      (cdkDropListDropped)="onFieldDrop($event)"
+    >
+      @if (field.children && field.children.length > 0) {
+        @for (child of field.children; track child.id) {
+          <field-item
+            cdkDrag
+            [field]="child"
+            [parentList]="field.children"
+            [level]="level + 1"
+            [showDisplayType]="showDisplayType"
+            (fieldChange)="onChildFieldChange()"
+            (delete)="onChildDelete($event)"
+            (duplicate)="onChildDuplicate($event)"
+          >
+            <!-- Drag Placeholder -->
+            <div class="drag-placeholder" *cdkDragPlaceholder></div>
+            <!-- Drag Preview -->
+            <div *cdkDragPreview class="drag-preview">
+              <mat-icon>{{ getTypeIcon(child.type) }}</mat-icon>
+              {{ child.name || 'unnamed' }}
+            </div>
+          </field-item>
+        }
+      } @else {
+        <div class="empty-nested">
+          <span>{{ getEmptyMessage() }}</span>
+          <button mat-button (click)="addChildField()" color="primary">
+            <mat-icon>add</mat-icon>
+            {{ getAddButtonLabel() }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

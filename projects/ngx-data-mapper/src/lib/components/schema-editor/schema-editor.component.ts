@@ -4,6 +4,8 @@ import {
   Output,
   EventEmitter,
   signal,
+  inject,
+  ApplicationRef,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,27 +19,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { JsonSchema } from '../../models/json-schema.model';
+import { FieldItemComponent, EditorField } from './field-item/field-item.component';
 
 // Display type options for form rendering
 type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle';
-
-// Internal representation for UI editing
-interface EditorField {
-  id: string;
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'date' | 'time' | 'object' | 'array';
-  format?: string; // Preserves JSON Schema format (email, uri, uuid, etc.)
-  displayType?: DisplayType;
-  description?: string;
-  required?: boolean;
-  defaultValue?: string | number | boolean;
-  allowedValues?: string[];
-  children?: EditorField[];
-  expanded?: boolean;
-  isEditing?: boolean;
-  isEditingValues?: boolean;
-  isEditingDefault?: boolean;
-}
 
 @Component({
   selector: 'schema-editor',
@@ -54,16 +39,19 @@ interface EditorField {
     MatMenuModule,
     MatButtonToggleModule,
     DragDropModule,
+    FieldItemComponent,
   ],
   templateUrl: './schema-editor.component.html',
   styleUrl: './schema-editor.component.scss',
 })
 export class SchemaEditorComponent {
+  private appRef = inject(ApplicationRef);
+
   @Input() set schema(value: JsonSchema | null) {
     if (value) {
-      // Don't overwrite fields if we have uncommitted changes (fields being edited or with empty names)
+      // Don't overwrite fields if we have uncommitted changes (fields with editors open or empty names)
       const hasUncommittedChanges = this.fields().some(f =>
-        f.isEditing || f.isEditingDefault || f.isEditingValues || !f.name
+        f.isEditingDefault || f.isEditingValues || f.isEditingValidators || !f.name
       ) || this.hasUncommittedChildFields(this.fields());
 
       this.schemaName.set(value.title || 'New Schema');
@@ -77,7 +65,7 @@ export class SchemaEditorComponent {
   private hasUncommittedChildFields(fields: EditorField[]): boolean {
     for (const field of fields) {
       if (field.children) {
-        if (field.children.some(c => c.isEditing || c.isEditingDefault || c.isEditingValues || !c.name)) {
+        if (field.children.some(c => c.isEditingDefault || c.isEditingValues || c.isEditingValidators || !c.name)) {
           return true;
         }
         if (this.hasUncommittedChildFields(field.children)) {
@@ -141,6 +129,13 @@ export class SchemaEditorComponent {
     { value: 'toggle', label: 'Toggle', icon: 'toggle_on' },
   ];
 
+  stringFormats: Array<{ value: string; label: string }> = [
+    { value: '', label: '(none)' },
+    { value: 'email', label: 'Email' },
+    { value: 'uri', label: 'URI (URL)' },
+    { value: 'uuid', label: 'UUID' },
+  ];
+
   getDisplayTypes(fieldType: string): Array<{ value: DisplayType; label: string; icon: string }> {
     if (fieldType === 'date') return this.dateDisplayTypes;
     if (fieldType === 'time') return this.timeDisplayTypes;
@@ -171,12 +166,9 @@ export class SchemaEditorComponent {
       name: '',
       type: 'string',
       displayType: 'textbox',
-      isEditing: true,
       expanded: false,
     };
     this.fields.update(fields => [...fields, newField]);
-    // Don't emit change here - field has empty name and would be filtered out
-    // Change will be emitted in stopEdit() when user provides a name
   }
 
   // Add a child field to an object or array
@@ -189,13 +181,55 @@ export class SchemaEditorComponent {
       name: '',
       type: 'string',
       displayType: 'textbox',
-      isEditing: true,
     };
     parent.children.push(newField);
     parent.expanded = true;
     this.fields.update(fields => [...fields]);
-    // Don't emit change here - field has empty name and would be filtered out
-    // Change will be emitted in stopEdit() when user provides a name
+  }
+
+  // Handle field change from FieldItemComponent
+  onFieldChange(): void {
+    console.log('schema-editor onFieldChange called');
+    this.fields().forEach(f => {
+      if (f.type === 'object' || f.type === 'array') {
+        console.log(`  field "${f.name}" expanded:${f.expanded} children:${f.children?.length}`);
+      }
+    });
+    this.fields.update(fields => [...fields]);
+    this.appRef.tick();
+    this.emitChange();
+  }
+
+  // Handle field delete from FieldItemComponent
+  onFieldDelete(field: EditorField): void {
+    const index = this.fields().indexOf(field);
+    if (index > -1) {
+      this.fields.update(fields => {
+        const newFields = [...fields];
+        newFields.splice(index, 1);
+        return newFields;
+      });
+      this.emitChange();
+    }
+  }
+
+  // Handle field duplicate from FieldItemComponent
+  onFieldDuplicate(field: EditorField): void {
+    const index = this.fields().indexOf(field);
+    if (index > -1) {
+      const clone: EditorField = {
+        ...field,
+        id: this.generateId(),
+        name: field.name + '_copy',
+        children: field.children ? this.cloneFields(field.children) : undefined,
+      };
+      this.fields.update(fields => {
+        const newFields = [...fields];
+        newFields.splice(index + 1, 0, clone);
+        return newFields;
+      });
+      this.emitChange();
+    }
   }
 
   // Delete a field
@@ -217,7 +251,6 @@ export class SchemaEditorComponent {
         id: this.generateId(),
         name: field.name + '_copy',
         children: field.children ? this.cloneFields(field.children) : undefined,
-        isEditing: false,
       };
       parentList.splice(index + 1, 0, clone);
       this.fields.update(fields => [...fields]);
@@ -231,22 +264,6 @@ export class SchemaEditorComponent {
     this.fields.update(fields => [...fields]);
   }
 
-  // Start editing a field
-  startEdit(field: EditorField): void {
-    field.isEditing = true;
-    this.fields.update(fields => [...fields]);
-  }
-
-  // Stop editing a field
-  stopEdit(field: EditorField): void {
-    field.isEditing = false;
-    if (!field.name.trim()) {
-      field.name = 'unnamed';
-    }
-    this.fields.update(fields => [...fields]);
-    this.emitChange();
-  }
-
   // Handle field name input - only allow valid property name characters
   onFieldNameChange(field: EditorField, event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -258,6 +275,15 @@ export class SchemaEditorComponent {
     if (input.value !== sanitized) {
       input.value = sanitized;
     }
+  }
+
+  // Handle field name blur - ensure name is valid and emit change
+  onFieldNameBlur(field: EditorField): void {
+    if (!field.name.trim()) {
+      field.name = 'unnamed';
+    }
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
   }
 
   // Handle field type change
@@ -299,32 +325,28 @@ export class SchemaEditorComponent {
     this.emitChange();
   }
 
-  // Update field description (only update the field, don't trigger re-render)
-  onDescriptionChange(field: EditorField, description: string): void {
-    field.description = description;
+  // Update field label (only update the field, don't trigger re-render)
+  onLabelChange(field: EditorField, label: string): void {
+    field.label = label;
   }
 
-  // Emit change when description input loses focus
-  onDescriptionBlur(): void {
+  // Emit change when label input loses focus
+  onLabelBlur(): void {
     this.emitChange();
   }
 
   // Toggle allowed values editor
   toggleValuesEditor(field: EditorField): void {
-    const wasEditingDefault = field.isEditingDefault;
     field.isEditingValues = !field.isEditingValues;
     if (field.isEditingValues) {
-      // Close default editor when opening values editor
+      // Close other editors
       field.isEditingDefault = false;
+      field.isEditingValidators = false;
       if (!field.allowedValues) {
         field.allowedValues = [];
       }
     }
     this.fields.update(fields => [...fields]);
-    // Emit change if we closed the default editor (to save any default value)
-    if (wasEditingDefault) {
-      this.emitChange();
-    }
   }
 
   // Add allowed value
@@ -377,17 +399,13 @@ export class SchemaEditorComponent {
 
   // Toggle default value editor
   toggleDefaultEditor(field: EditorField): void {
-    const wasEditingValues = field.isEditingValues;
     field.isEditingDefault = !field.isEditingDefault;
     if (field.isEditingDefault) {
-      // Close values editor when opening default editor
+      // Close other editors
       field.isEditingValues = false;
+      field.isEditingValidators = false;
     }
     this.fields.update(fields => [...fields]);
-    // Emit change if we closed the values editor (to save any allowed values)
-    if (wasEditingValues) {
-      this.emitChange();
-    }
   }
 
   // Update default value
@@ -422,14 +440,72 @@ export class SchemaEditorComponent {
     }
   }
 
-  // Handle keyboard events in field name input
-  onFieldNameKeydown(event: KeyboardEvent, field: EditorField): void {
-    if (event.key === 'Enter') {
-      this.stopEdit(field);
-    } else if (event.key === 'Escape') {
-      field.isEditing = false;
-      this.fields.update(fields => [...fields]);
+  // Toggle validators editor
+  toggleValidatorsEditor(field: EditorField): void {
+    field.isEditingValidators = !field.isEditingValidators;
+    if (field.isEditingValidators) {
+      // Close other editors
+      field.isEditingValues = false;
+      field.isEditingDefault = false;
     }
+    this.fields.update(fields => [...fields]);
+  }
+
+  // Check if field has any validators set
+  hasValidators(field: EditorField): boolean {
+    if (field.type === 'string') {
+      return !!(field.minLength || field.maxLength || field.pattern || field.format);
+    }
+    if (field.type === 'number') {
+      return field.minimum !== undefined || field.maximum !== undefined;
+    }
+    return false;
+  }
+
+  // Update string format
+  onFormatChange(field: EditorField, format: string): void {
+    field.format = format || undefined;
+    // Clear pattern when format is set (they're mutually exclusive)
+    if (format) {
+      field.pattern = undefined;
+    }
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Update minLength
+  onMinLengthChange(field: EditorField, value: string): void {
+    field.minLength = value ? parseInt(value, 10) : undefined;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Update maxLength
+  onMaxLengthChange(field: EditorField, value: string): void {
+    field.maxLength = value ? parseInt(value, 10) : undefined;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Update pattern
+  onPatternChange(field: EditorField, value: string): void {
+    field.pattern = value || undefined;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Update minimum
+  onMinimumChange(field: EditorField, value: string): void {
+    field.minimum = value ? parseFloat(value) : undefined;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
+  }
+
+  // Update maximum
+  onMaximumChange(field: EditorField, value: string): void {
+    field.maximum = value ? parseFloat(value) : undefined;
+    this.fields.update(fields => [...fields]);
+    this.emitChange();
   }
 
   // Move field up in list
@@ -598,10 +674,12 @@ export class SchemaEditorComponent {
       displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'timepicker';
     }
 
-    // Preserve format for string types (not date/time which have dedicated field types)
+    // Preserve format for string types and date types
     let format: string | undefined;
     if (fieldType === 'string' && schema.format) {
       format = schema.format;
+    } else if (fieldType === 'date' && schema.format) {
+      format = schema.format; // Preserve 'date' vs 'date-time'
     }
 
     const field: EditorField = {
@@ -610,10 +688,16 @@ export class SchemaEditorComponent {
       type: fieldType,
       format,
       displayType,
-      description: schema.description,
+      label: schema.title,
       required: isRequired,
       allowedValues: schema.enum as string[] | undefined,
       defaultValue: schema.default as string | number | boolean | undefined,
+      // Validators
+      minLength: schema.minLength,
+      maxLength: schema.maxLength,
+      pattern: schema.pattern,
+      minimum: schema.minimum,
+      maximum: schema.maximum,
       expanded: false,
     };
 
@@ -693,7 +777,7 @@ export class SchemaEditorComponent {
     // Map type
     if (field.type === 'date') {
       schema['type'] = 'string';
-      schema['format'] = 'date-time';
+      schema['format'] = field.format || 'date-time'; // Use preserved format or default
     } else if (field.type === 'time') {
       schema['type'] = 'string';
       schema['format'] = 'time';
@@ -746,9 +830,9 @@ export class SchemaEditorComponent {
       }
     }
 
-    // Add description
-    if (field.description) {
-      schema['description'] = field.description;
+    // Add label as title
+    if (field.label) {
+      schema['title'] = field.label;
     }
 
     // Add enum for allowed values
@@ -761,6 +845,23 @@ export class SchemaEditorComponent {
       schema['default'] = field.defaultValue;
     }
 
+    // Add validators
+    if (field.minLength !== undefined) {
+      schema['minLength'] = field.minLength;
+    }
+    if (field.maxLength !== undefined) {
+      schema['maxLength'] = field.maxLength;
+    }
+    if (field.pattern) {
+      schema['pattern'] = field.pattern;
+    }
+    if (field.minimum !== undefined) {
+      schema['minimum'] = field.minimum;
+    }
+    if (field.maximum !== undefined) {
+      schema['maximum'] = field.maximum;
+    }
+
     // Add display type (custom extension)
     if (field.displayType) {
       schema['x-display-type'] = field.displayType;
@@ -771,7 +872,7 @@ export class SchemaEditorComponent {
 
   private stripEditingState(fields: EditorField[]): EditorField[] {
     return fields.map(f => {
-      const { isEditing, isEditingValues, isEditingDefault, ...rest } = f;
+      const { isEditingValues, isEditingDefault, isEditingValidators, ...rest } = f;
       return {
         ...rest,
         children: f.children ? this.stripEditingState(f.children) : undefined,
