@@ -1,6 +1,30 @@
 @echo off
-echo Building library...
-call npm run build:lib
+setlocal
+
+if "%~1"=="" (
+    echo Usage: publish.bat ^<library-name^>
+    echo.
+    echo Available libraries:
+    echo   ngx-data-mapper
+    echo   ngx-schema-editor
+    echo   ngx-dyna-form
+    exit /b 1
+)
+
+set LIBRARY=%~1
+
+if not exist "projects\%LIBRARY%" (
+    echo Error: Library '%LIBRARY%' not found in projects folder.
+    echo.
+    echo Available libraries:
+    echo   ngx-data-mapper
+    echo   ngx-schema-editor
+    echo   ngx-dyna-form
+    exit /b 1
+)
+
+echo Building %LIBRARY%...
+call ng build %LIBRARY%
 if %errorlevel% neq 0 (
     echo Build failed!
     exit /b %errorlevel%
@@ -21,14 +45,16 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo Publishing package...
-cd dist\ngx-data-mapper
+echo Publishing %LIBRARY%...
+cd dist\%LIBRARY%
 call npm publish --access public
 if %errorlevel% neq 0 (
     echo Publish failed!
+    cd ..\..
     exit /b %errorlevel%
 )
 
 echo.
-echo Successfully published!
+echo Successfully published %LIBRARY%!
 cd ..\..
+endlocal
