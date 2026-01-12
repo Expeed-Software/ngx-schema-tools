@@ -1,17 +1,15 @@
 {
-  "name": "angular-data-mapper",
+  "name": "ngx-schema-tools",
   "version": "1.0.0",
-  "description": "Visual data mapping components for Angular - drag-and-drop field mapping with transformations, schema editor with JSON Schema export",
+  "description": "Angular schema tools - JSON Schema editor and visual data mapper components",
   "keywords": [
     "angular",
+    "json-schema",
+    "schema-editor",
     "data-mapper",
     "field-mapping",
-    "schema-editor",
-    "json-schema",
-    "drag-drop",
-    "visual-mapping",
-    "etl",
-    "data-transformation"
+    "dynamic-form",
+    "visual-mapping"
   ],
   "author": "",
   "license": "Apache-2.0",
@@ -22,9 +20,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve demo-app",
-    "build": "npm run build:lib && npm run build:demo",
-    "build:lib": "ng build ngx-data-mapper",
-    "build:lib:watch": "ng build ngx-data-mapper --watch",
+    "build": "npm run build:libs && npm run build:demo",
+    "build:libs": "ng build ngx-data-mapper && ng build ngx-schema-editor && ng build ngx-dyna-form",
+    "build:lib:data-mapper": "ng build ngx-data-mapper",
+    "build:lib:schema-editor": "ng build ngx-schema-editor",
+    "build:lib:dyna-form": "ng build ngx-dyna-form",
     "build:demo": "ng build demo-app",
     "build:demo:prod": "ng build demo-app --configuration production",
     "watch": "ng build demo-app --watch --configuration development",
@@ -53,6 +53,8 @@
     "@angular/material": "^21.0.5",
     "@angular/platform-browser": "^21.0.0",
     "@angular/router": "^21.0.0",
+    "ngx-quill": "^30.0.1",
+    "quill": "^2.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
   },
@@ -61,7 +63,10 @@
     "@angular/build": "^21.0.4",
     "@angular/cli": "^21.0.4",
     "@angular/compiler-cli": "^21.0.0",
+    "@types/json-schema": "^7.0.15",
+    "jsdom": "^27.1.0",
     "ng-packagr": "^21.0.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^4.0.8"
   }
 }

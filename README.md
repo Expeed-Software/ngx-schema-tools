@@ -1,36 +1,41 @@
-# Angular Data Mapper
+# Angular Schema Tools
 
-Visual data mapping components for Angular applications. Create field mappings between source and target schemas with drag-and-drop, apply transformations, and define JSON schemas visually.
+A monorepo containing Angular libraries for JSON Schema editing, visual data mapping, and dynamic form rendering.
 
-[![npm version](https://img.shields.io/npm/v/@expeed/ngx-data-mapper.svg)](https://www.npmjs.com/package/@expeed/ngx-data-mapper)
-![Angular](https://img.shields.io/badge/Angular-21-dd0031?logo=angular)
-![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
+## Libraries
 
-## Features
+| Library | Description | Version |
+|---------|-------------|---------|
+| [@expeed/ngx-schema-editor](./projects/ngx-schema-editor) | Visual JSON Schema editor | 1.0.0 |
+| [@expeed/ngx-data-mapper](./projects/ngx-data-mapper) | Drag-and-drop field mapping | 1.3.3 |
+| [@expeed/ngx-dyna-form](./projects/ngx-dyna-form) | Dynamic form renderer | 0.0.1 |
 
-### Data Mapper Component (`data-mapper`)
-- Drag-and-drop field mapping between source and target schemas
-- Visual SVG connectors with bezier curves
-- Field transformations (uppercase, lowercase, trim, date formatting, etc.)
-- Array mapping with filters and selectors
-- Default values for unmapped target fields
-- Real-time preview with sample data
-- Import/export mappings as JSON
+## Overview
 
-### Schema Editor Component (`schema-editor`)
-- Visual schema builder with nested objects and arrays
-- Field types: string, number, boolean, date, object, array
-- Required field toggle
-- Field descriptions
-- Allowed values (enum) support
-- Export as valid JSON Schema (draft 2020-12)
-- Reorder fields with up/down buttons
-- Indent/outdent to restructure hierarchy
+These libraries work together to provide a complete schema-driven workflow:
 
-## Installation
+1. **Define schemas** using the visual Schema Editor
+2. **Create mappings** between source and target schemas using Data Mapper
+3. **Render forms** dynamically from schemas using Dyna Form
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│  Schema Editor  │────▶│   Data Mapper   │────▶│   Dyna Form     │
+│                 │     │                 │     │                 │
+│ Create/Edit     │     │ Map fields      │     │ Render forms    │
+│ JSON Schemas    │     │ Transform data  │     │ from schemas    │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+```
+
+## Quick Start
+
+### Installation
 
 ```bash
+# Install individual libraries as needed
+npm install @expeed/ngx-schema-editor
 npm install @expeed/ngx-data-mapper
+npm install @expeed/ngx-dyna-form
 ```
 
 ### Peer Dependencies
@@ -39,176 +44,130 @@ npm install @expeed/ngx-data-mapper
 npm install @angular/cdk @angular/material
 ```
 
-## Quick Start
-
-### Data Mapper Component
-
-```typescript
-import { Component } from '@angular/core';
-import { DataMapperComponent, JsonSchema, FieldMapping } from '@expeed/ngx-data-mapper';
-
-@Component({
-  standalone: true,
-  imports: [DataMapperComponent],
-  template: `
-    <data-mapper
-      [sourceSchema]="sourceSchema"
-      [targetSchema]="targetSchema"
-      [sampleData]="sampleData"
-      (mappingsChange)="onMappingsChange($event)">
-    </data-mapper>
-  `
-})
-export class MyComponent {
-  sourceSchema: JsonSchema = {
-    name: 'Source',
-    fields: [
-      { id: '1', name: 'firstName', type: 'string', path: 'firstName' },
-      { id: '2', name: 'lastName', type: 'string', path: 'lastName' },
-    ]
-  };
-
-  targetSchema: JsonSchema = {
-    name: 'Target',
-    fields: [
-      { id: '1', name: 'fullName', type: 'string', path: 'fullName' },
-    ]
-  };
-
-  sampleData = { firstName: 'John', lastName: 'Doe' };
-
-  onMappingsChange(mappings: FieldMapping[]) {
-    console.log('Mappings:', mappings);
-  }
-}
+For `ngx-dyna-form` with rich text support:
+```bash
+npm install ngx-quill quill
 ```
 
-### Schema Editor Component
+### Requirements
+
+- Angular 19+
+- Angular Material 19+
+- Angular CDK 19+
+
+## Library Summaries
+
+### ngx-schema-editor
+
+Visual JSON Schema builder with drag-and-drop field organization.
 
 ```typescript
-import { Component } from '@angular/core';
-import { SchemaEditorComponent, SchemaDefinition } from '@expeed/ngx-data-mapper';
+import { SchemaEditorComponent } from '@expeed/ngx-schema-editor';
 
 @Component({
-  standalone: true,
   imports: [SchemaEditorComponent],
   template: `
     <schema-editor
       [schema]="schema"
-      (schemaChange)="onSchemaChange($event)">
-    </schema-editor>
+      (schemaChange)="onSchemaChange($event)"
+    />
   `
 })
-export class MyComponent {
-  schema: SchemaDefinition = { name: 'Customer', fields: [] };
-
-  onSchemaChange(updated: SchemaDefinition) {
-    console.log('Schema:', updated);
-  }
-}
 ```
 
-## Styling with CSS Variables
+[Full Documentation](./projects/ngx-schema-editor/README.md)
 
-### Light Theme (Default)
+### ngx-data-mapper
 
-```css
-data-mapper {
-  --data-mapper-bg: #f8fafc;
-  --data-mapper-panel-bg: #ffffff;
-  --data-mapper-text-primary: #1e293b;
-  --data-mapper-text-secondary: #64748b;
-  --data-mapper-accent-primary: #6366f1;
-  --data-mapper-connector-color: #6366f1;
-}
+Visual field mapping between source and target schemas with transformations.
+
+```typescript
+import { DataMapperComponent } from '@expeed/ngx-data-mapper';
+
+@Component({
+  imports: [DataMapperComponent],
+  template: `
+    <data-mapper
+      [sourceSchema]="source"
+      [targetSchema]="target"
+      (mappingsChange)="onMappingsChange($event)"
+    />
+  `
+})
 ```
 
-### Dark Theme
+[Full Documentation](./projects/ngx-data-mapper/README.md)
 
-```css
-data-mapper {
-  --data-mapper-bg: #1e293b;
-  --data-mapper-panel-bg: #334155;
-  --data-mapper-text-primary: #f1f5f9;
-  --data-mapper-text-secondary: #cbd5e1;
-  --data-mapper-accent-primary: #818cf8;
-  --data-mapper-connector-color: #818cf8;
-}
+### ngx-dyna-form
+
+Dynamic form renderer from JSON Schema definitions.
+
+```typescript
+import { DynamicFormComponent } from '@expeed/ngx-dyna-form';
+
+@Component({
+  imports: [DynamicFormComponent],
+  template: `
+    <dyna-form
+      [schema]="schema"
+      [values]="formValues"
+      (valuesChange)="onValuesChange($event)"
+      (validChange)="onValidChange($event)"
+    />
+  `
+})
 ```
 
-## API Reference
-
-### DataMapperComponent
-
-| Input | Type | Description |
-|-------|------|-------------|
-| `sourceSchema` | `JsonSchema` | Source schema for mapping |
-| `targetSchema` | `JsonSchema` | Target schema for mapping |
-| `sampleData` | `Record<string, unknown>` | Sample data for preview |
-
-| Output | Type | Description |
-|--------|------|-------------|
-| `mappingsChange` | `EventEmitter<FieldMapping[]>` | Emits when mappings change |
-
-| Method | Description |
-|--------|-------------|
-| `importMappings(json: string)` | Import mappings from JSON |
-| `clearAllMappings()` | Remove all mappings |
-
-### SchemaEditorComponent
-
-| Input | Type | Description |
-|-------|------|-------------|
-| `schema` | `SchemaDefinition` | Schema to edit |
-
-| Output | Type | Description |
-|--------|------|-------------|
-| `schemaChange` | `EventEmitter<SchemaDefinition>` | Emits on any change |
-
-## Exports
-
-### Components
-- `DataMapperComponent`
-- `SchemaEditorComponent`
-- `SchemaTreeComponent`
-- `TransformationPopoverComponent`
-- `ArrayFilterModalComponent`
-- `ArraySelectorModalComponent`
-- `DefaultValuePopoverComponent`
-
-### Services
-- `MappingService`
-- `TransformationService`
-- `SvgConnectorService`
-- `SchemaParserService`
-
-### Interfaces
-- `JsonSchema`, `SchemaField`, `FieldMapping`
-- `SchemaDefinition`, `EditorField`
-- `TransformationConfig`, `ArrayMapping`, `ArrayFilterConfig`
-- `SchemaDocument`, `ModelRegistry`
-
-## Requirements
-
-- Angular 21+
-- Angular Material 21+
-- Angular CDK 21+
+[Full Documentation](./projects/ngx-dyna-form/README.md)
 
 ## Development
 
+### Setup
+
 ```bash
-# Clone repository
-git clone https://github.com/Expeed-Software/angular-data-mapper.git
-cd angular-data-mapper
 npm install
-
-# Build library
-npm run build:lib
-
-# Start demo app
-npm start
 ```
+
+### Build All Libraries
+
+```bash
+npm run build:libs
+```
+
+### Build Individual Library
+
+```bash
+ng build ngx-schema-editor
+ng build ngx-data-mapper
+ng build ngx-dyna-form
+```
+
+### Run Demo App
+
+```bash
+ng serve demo-app
+```
+
+### Project Structure
+
+```
+├── projects/
+│   ├── ngx-schema-editor/    # Schema editor library
+│   ├── ngx-data-mapper/      # Data mapping library
+│   ├── ngx-dyna-form/        # Dynamic form library
+│   └── demo-app/             # Demo application
+├── dist/                     # Built libraries
+└── package.json
+```
+
+## Technology Stack
+
+- Angular 19+
+- Angular Material
+- Angular CDK
+- ngx-quill (rich text)
+- RxJS
 
 ## License
 
-Apache License 2.0
+Apache 2.0

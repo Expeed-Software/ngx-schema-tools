@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatMenuModule } from '@angular/material/menu';
-import { SchemaEditorComponent, JsonSchema } from '@expeed/ngx-data-mapper';
+import { SchemaEditorComponent, JsonSchema } from '@expeed/ngx-schema-editor';
 import { AppStateService, StoredSchema } from '../../services/app-state.service';
 
 @Component({

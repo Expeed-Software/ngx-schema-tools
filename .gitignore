@@ -1,28 +1,63 @@
 # Dependencies
 node_modules/
+package-lock.json
 
 # Build outputs
 dist/
 tmp/
 out-tsc/
-
-# IDE
-.idea/
-.vscode/
-*.sublime-workspace
+bazel-out/
 
 # Angular
 .angular/
+.sass-cache/
+
+# IDE
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
 
 # System files
 .DS_Store
 Thumbs.db
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # Environment files
 .env
-.env.local
+.env.*
+!.env.example
+
+# Test coverage
+coverage/
+.nyc_output/
 
 # Misc
-nul
 *.bak
+*.tmp
+*.temp
+nul
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache
+.npm/
+
+# Optional eslint cache
+.eslintcache
+
+# Claude
+.claude/

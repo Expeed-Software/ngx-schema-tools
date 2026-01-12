@@ -17,7 +17,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-  SchemaField,
+  SchemaTreeNode,
   SchemaDefinition,
   FieldMapping,
   TransformationConfig,
@@ -26,17 +26,17 @@ import {
   ArrayToObjectMapping,
   ArraySelectorConfig,
   DefaultValue,
-} from '../../models/schema.model';
+} from './models/schema.model';
 import { JsonSchema } from '../../models/json-schema.model';
-import { MappingService } from '../../services/mapping.service';
-import { SvgConnectorService, Point } from '../../services/svg-connector.service';
-import { TransformationService } from '../../services/transformation.service';
-import { SchemaParserService, SchemaDocument } from '../../services/schema-parser.service';
-import { SchemaTreeComponent, FieldPositionEvent } from '../schema-tree/schema-tree.component';
-import { TransformationPopoverComponent } from '../transformation-popover/transformation-popover.component';
-import { ArrayFilterModalComponent } from '../array-filter-modal/array-filter-modal.component';
-import { ArraySelectorModalComponent } from '../array-selector-modal/array-selector-modal.component';
-import { DefaultValuePopoverComponent } from '../default-value-popover/default-value-popover.component';
+import { MappingService } from './services/mapping.service';
+import { SvgConnectorService, Point } from './services/svg-connector.service';
+import { TransformationService } from './services/transformation.service';
+import { SchemaParserService } from './services/schema-parser.service';
+import { SchemaTreeComponent, FieldPositionEvent } from './schema-tree/schema-tree.component';
+import { TransformationPopoverComponent } from './transformation-popover/transformation-popover.component';
+import { ArrayFilterModalComponent } from './array-filter-modal/array-filter-modal.component';
+import { ArraySelectorModalComponent } from './array-selector-modal/array-selector-modal.component';
+import { DefaultValuePopoverComponent } from './default-value-popover/default-value-popover.component';
 
 interface VisualConnection {
   id: string;
@@ -71,12 +71,12 @@ interface VisualConnection {
   styleUrl: './data-mapper.component.scss',
 })
 export class DataMapperComponent implements AfterViewInit, OnDestroy {
-  @Input() set sourceSchema(value: JsonSchema | SchemaDocument) {
+  @Input() set sourceSchema(value: JsonSchema) {
     if (value) {
       this._sourceSchemaInput.set(value);
     }
   }
-  @Input() set targetSchema(value: JsonSchema | SchemaDocument) {
+  @Input() set targetSchema(value: JsonSchema) {
     if (value) {
       this._targetSchemaInput.set(value);
     }
@@ -100,20 +100,20 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
   private schemaParserService = inject(SchemaParserService);
 
   // Internal signals for schema inputs
-  private _sourceSchemaInput = signal<JsonSchema | SchemaDocument | null>(null);
-  private _targetSchemaInput = signal<JsonSchema | SchemaDocument | null>(null);
+  private _sourceSchemaInput = signal<JsonSchema | null>(null);
+  private _targetSchemaInput = signal<JsonSchema | null>(null);
 
   // Converted schemas for the tree component
   readonly sourceSchemaForTree = computed(() => {
     const schema = this._sourceSchemaInput();
     if (!schema) return { name: '', fields: [] };
-    return this.schemaParserService.parseSchema(schema as SchemaDocument, schema.title || 'Source');
+    return this.schemaParserService.parseSchema(schema, schema.title || 'Source');
   });
 
   readonly targetSchemaForTree = computed(() => {
     const schema = this._targetSchemaInput();
     if (!schema) return { name: '', fields: [] };
-    return this.schemaParserService.parseSchema(schema as SchemaDocument, schema.title || 'Target');
+    return this.schemaParserService.parseSchema(schema, schema.title || 'Target');
   });
 
   // Field positions from both trees
@@ -136,7 +136,7 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
 
   // Default value popover state
   showDefaultValuePopover = signal(false);
-  selectedDefaultValueField = signal<SchemaField | null>(null);
+  selectedDefaultValueField = signal<SchemaTreeNode | null>(null);
   defaultValuePopoverPosition = signal<{ x: number; y: number } | null>(null);
 
   // Computed values
@@ -147,7 +147,7 @@ export class DataMapperComponent implements AfterViewInit, OnDestroy {
   readonly showPopover = computed(() => this.selectedMappingId() !== null && this.popoverPosition() !== null && !this.showArrayFilterModal());
 
   private isDragging = false;
-  private dragSourceField: SchemaField | null = null;
+  private dragSourceField: SchemaTreeNode | null = null;
   private dragStartPoint: Point | null = null;
   private resizeObserver!: ResizeObserver;
 

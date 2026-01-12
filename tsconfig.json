@@ -16,6 +16,12 @@
     "paths": {
       "@expeed/ngx-data-mapper": [
         "projects/ngx-data-mapper/src/public-api.ts"
+      ],
+      "@expeed/ngx-schema-editor": [
+        "projects/ngx-schema-editor/src/public-api.ts"
+      ],
+      "@expeed/ngx-dyna-form": [
+        "projects/ngx-dyna-form/src/public-api.ts"
       ]
     }
   },

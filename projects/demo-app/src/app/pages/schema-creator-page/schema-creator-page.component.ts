@@ -2,7 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { SchemaEditorComponent, JsonSchema } from '@expeed/ngx-data-mapper';
+import { SchemaEditorComponent, JsonSchema } from '@expeed/ngx-schema-editor';
 
 @Component({
   selector: 'schema-creator-page',

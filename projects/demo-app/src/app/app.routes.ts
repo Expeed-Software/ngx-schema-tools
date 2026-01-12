@@ -40,6 +40,27 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'dyna-form',
+        loadComponent: () =>
+          import('./pages/dyna-form-page/dyna-form-page.component').then(
+            (m) => m.DynaFormPageComponent
+          ),
+      },
+      {
+        path: 'form-layout',
+        loadComponent: () =>
+          import('./pages/form-layout-page/form-layout-page.component').then(
+            (m) => m.FormLayoutPageComponent
+          ),
+      },
+      {
+        path: 'quill-test',
+        loadComponent: () =>
+          import('./pages/quill-test-page/quill-test-page.component').then(
+            (m) => m.QuillTestPageComponent
+          ),
+      },
+      {
         path: 'mapper/:id',
         loadComponent: () =>
           import('./pages/mapper-page/mapper-page.component').then(

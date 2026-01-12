@@ -14,7 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DataMapperComponent, SchemaDocument, FieldMapping } from '@expeed/ngx-data-mapper';
+import { DataMapperComponent, JsonSchema, FieldMapping } from '@expeed/ngx-data-mapper';
 import { AppStateService } from '../../services/app-state.service';
 import { SampleDataService } from '../../services/sample-data.service';
 
@@ -51,8 +51,8 @@ export class MapperPageComponent implements OnInit {
   });
 
   // State: schemas and mappings
-  sourceSchema = signal<SchemaDocument>({ type: 'object', title: '', properties: {} });
-  targetSchema = signal<SchemaDocument>({ type: 'object', title: '', properties: {} });
+  sourceSchema = signal<JsonSchema>({ type: 'object', title: '', properties: {} });
+  targetSchema = signal<JsonSchema>({ type: 'object', title: '', properties: {} });
   sampleData = signal<Record<string, unknown>>({});
   mappings = signal<FieldMapping[]>([]);
 
@@ -90,11 +90,11 @@ export class MapperPageComponent implements OnInit {
 
         if (sourceSchema) {
           const { id: _, ...schema } = sourceSchema;
-          this.sourceSchema.set(schema as SchemaDocument);
+          this.sourceSchema.set(schema as JsonSchema);
         }
         if (targetSchema) {
           const { id: _, ...schema } = targetSchema;
-          this.targetSchema.set(schema as SchemaDocument);
+          this.targetSchema.set(schema as JsonSchema);
         }
 
         // Load existing mapping data if available

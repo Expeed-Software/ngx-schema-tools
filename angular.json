@@ -76,6 +76,7 @@
               }
             ],
             "styles": [
+              "node_modules/quill/dist/quill.snow.css",
               "projects/demo-app/src/styles.scss"
             ]
           },
@@ -89,8 +90,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "10kB",
-                  "maximumError": "16kB"
+                  "maximumWarning": "15kB",
+                  "maximumError": "20kB"
                 }
               ],
               "outputHashing": "all"
@@ -114,6 +115,58 @@
             }
           },
           "defaultConfiguration": "development"
+        }
+      }
+    },
+    "ngx-schema-editor": {
+      "projectType": "library",
+      "root": "projects/ngx-schema-editor",
+      "sourceRoot": "projects/ngx-schema-editor/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/ngx-schema-editor/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/ngx-schema-editor/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/ngx-schema-editor/tsconfig.spec.json"
+          }
+        }
+      }
+    },
+    "ngx-dyna-form": {
+      "projectType": "library",
+      "root": "projects/ngx-dyna-form",
+      "sourceRoot": "projects/ngx-dyna-form/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular/build:ng-packagr",
+          "configurations": {
+            "production": {
+              "tsConfig": "projects/ngx-dyna-form/tsconfig.lib.prod.json"
+            },
+            "development": {
+              "tsConfig": "projects/ngx-dyna-form/tsconfig.lib.json"
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "tsConfig": "projects/ngx-dyna-form/tsconfig.spec.json"
+          }
         }
       }
     }

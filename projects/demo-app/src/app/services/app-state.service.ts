@@ -15,6 +15,14 @@ export interface StoredMapping {
   updatedAt: string;
 }
 
+export interface SchemaUIConfig {
+  schemaId: string;
+  columns: 1 | 2;
+  defaultFieldColumns: number;
+  fieldColumns: Record<string, number>;
+  excludeFields: string[];
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -26,6 +34,10 @@ export class AppStateService {
   // Mappings state
   private _mappings = signal<StoredMapping[]>([]);
   mappings = this._mappings.asReadonly();
+
+  // UI Configs state
+  private _uiConfigs = signal<SchemaUIConfig[]>([]);
+  uiConfigs = this._uiConfigs.asReadonly();
 
   constructor() {
     this.loadFromStorage();
@@ -58,14 +70,26 @@ export class AppStateService {
         console.error('Failed to load mappings:', e);
       }
     }
+
+    // Load UI configs
+    const savedUIConfigs = localStorage.getItem('schemaUIConfigs');
+    if (savedUIConfigs) {
+      try {
+        this._uiConfigs.set(JSON.parse(savedUIConfigs));
+      } catch (e) {
+        console.error('Failed to load UI configs:', e);
+      }
+    }
   }
 
   // Reset to default schemas (clears existing and adds defaults)
   resetToDefaults(): void {
     localStorage.removeItem('objectSchemas');
     localStorage.removeItem('dataMappings');
+    localStorage.removeItem('schemaUIConfigs');
     this._schemas.set([]);
     this._mappings.set([]);
+    this._uiConfigs.set([]);
     this.addDefaultSchemas();
   }
 
@@ -144,6 +168,10 @@ export class AppStateService {
 
   private saveMappings(): void {
     localStorage.setItem('dataMappings', JSON.stringify(this._mappings()));
+  }
+
+  private saveUIConfigs(): void {
+    localStorage.setItem('schemaUIConfigs', JSON.stringify(this._uiConfigs()));
   }
 
   // --- Schema Operations ---
@@ -229,5 +257,26 @@ export class AppStateService {
   getSchemaName(id: string): string {
     const schema = this.getSchemaById(id);
     return schema?.title || 'Unknown';
+  }
+
+  // --- UI Config Operations ---
+
+  getUIConfigBySchemaId(schemaId: string): SchemaUIConfig | undefined {
+    return this._uiConfigs().find(c => c.schemaId === schemaId);
+  }
+
+  saveUIConfig(config: SchemaUIConfig): void {
+    const existingIndex = this._uiConfigs().findIndex(c => c.schemaId === config.schemaId);
+    if (existingIndex >= 0) {
+      this._uiConfigs.update(list => list.map((c, i) => i === existingIndex ? config : c));
+    } else {
+      this._uiConfigs.update(list => [...list, config]);
+    }
+    this.saveUIConfigs();
+  }
+
+  deleteUIConfig(schemaId: string): void {
+    this._uiConfigs.update(list => list.filter(c => c.schemaId !== schemaId));
+    this.saveUIConfigs();
   }
 }

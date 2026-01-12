@@ -62,6 +62,26 @@ import { MatTooltipModule } from '@angular/material/tooltip';
             </a>
             <a
               class="nav-item"
+              routerLink="/form-layout"
+              routerLinkActive="active"
+              [matTooltip]="collapsed() ? 'Form Layout' : ''"
+              matTooltipPosition="right"
+            >
+              <mat-icon>dashboard_customize</mat-icon>
+              <span [class.hidden]="collapsed()">Form Layout</span>
+            </a>
+            <a
+              class="nav-item"
+              routerLink="/dyna-form"
+              routerLinkActive="active"
+              [matTooltip]="collapsed() ? 'Dynamic Form' : ''"
+              matTooltipPosition="right"
+            >
+              <mat-icon>dynamic_form</mat-icon>
+              <span [class.hidden]="collapsed()">Dynamic Form</span>
+            </a>
+            <a
+              class="nav-item"
               routerLink="/mappings"
               routerLinkActive="active"
               [matTooltip]="collapsed() ? 'Mappings' : ''"
@@ -69,16 +89,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
             >
               <mat-icon>swap_horiz</mat-icon>
               <span [class.hidden]="collapsed()">Mappings</span>
-            </a>
-            <a
-              class="nav-item"
-              routerLink="/schema-creator"
-              routerLinkActive="active"
-              [matTooltip]="collapsed() ? 'Schema Creator' : ''"
-              matTooltipPosition="right"
-            >
-              <mat-icon>add_box</mat-icon>
-              <span [class.hidden]="collapsed()">Schema Creator</span>
             </a>
           </div>
         </nav>

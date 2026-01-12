@@ -1,0 +1,15 @@
+{
+  "name": "@expeed/ngx-dyna-form",
+  "version": "1.0.0",
+  "description": "Dynamic form component that renders forms from JSON Schema with x-display-type extensions",
+  "peerDependencies": {
+    "@angular/common": "^21.0.0",
+    "@angular/core": "^21.0.0",
+    "@angular/forms": "^21.0.0",
+    "ngx-quill": "^30.0.0"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}

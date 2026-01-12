@@ -1,0 +1,1010 @@
+// CSS Custom Properties for theming
+:host {
+  // Colors
+  --schema-editor-bg: white;
+  --schema-editor-border-radius: 12px;
+  --schema-editor-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  --schema-editor-border-color: #e2e8f0;
+
+  // Header
+  --schema-editor-header-bg: white;
+  --schema-editor-header-border: #e2e8f0;
+
+  // Field item
+  --schema-editor-field-bg: #f8fafc;
+  --schema-editor-field-bg-hover: #f1f5f9;
+  --schema-editor-field-bg-editing: #eff6ff;
+  --schema-editor-field-bg-complex: #fefce8;
+  --schema-editor-field-border-radius: 8px;
+
+  // Text colors
+  --schema-editor-text-primary: #1e293b;
+  --schema-editor-text-secondary: #64748b;
+  --schema-editor-text-muted: #94a3b8;
+
+  // Accent colors
+  --schema-editor-accent-primary: #3b82f6;
+  --schema-editor-accent-success: #22c55e;
+  --schema-editor-accent-warning: #f59e0b;
+  --schema-editor-accent-danger: #ef4444;
+
+  // Spacing
+  --schema-editor-spacing-sm: 8px;
+  --schema-editor-spacing-md: 16px;
+  --schema-editor-spacing-lg: 24px;
+
+  // Font sizes
+  --schema-editor-font-size-sm: 12px;
+  --schema-editor-font-size-md: 14px;
+  --schema-editor-font-size-lg: 16px;
+}
+
+.schema-editor {
+  background: var(--schema-editor-bg);
+  border-radius: var(--schema-editor-border-radius);
+  box-shadow: var(--schema-editor-shadow);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--schema-editor-spacing-md) var(--schema-editor-spacing-lg);
+  border-bottom: 1px solid var(--schema-editor-border-color);
+  gap: var(--schema-editor-spacing-md);
+  flex-shrink: 0;
+  background: var(--schema-editor-bg);
+
+  .schema-name-section {
+    flex: 1;
+    max-width: 400px;
+  }
+
+  .schema-name-field {
+    width: 100%;
+
+    ::ng-deep {
+      .mat-mdc-form-field-subscript-wrapper {
+        display: none;
+      }
+
+      .mat-mdc-text-field-wrapper {
+        padding: 0 12px;
+      }
+
+      .mat-mdc-form-field-infix {
+        padding-top: 8px;
+        padding-bottom: 8px;
+        min-height: 36px;
+      }
+
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: var(--schema-editor-border-color) !important;
+      }
+
+      .mdc-notched-outline__notch {
+        border-right: none;
+      }
+
+      input.mat-mdc-input-element {
+        font-size: 14px;
+        font-family: inherit;
+      }
+
+      .mat-mdc-floating-label {
+        font-size: 13px;
+        font-family: inherit;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+  }
+
+  .view-toggle {
+    border: 1px solid var(--schema-editor-border-color);
+    border-radius: 8px;
+    overflow: hidden;
+
+    ::ng-deep {
+      .mat-button-toggle {
+        background: white;
+
+        &.mat-button-toggle-checked {
+          background: var(--schema-editor-accent-primary);
+          color: white;
+        }
+
+        .mat-button-toggle-label-content {
+          padding: 0 16px;
+          font-size: 13px;
+          font-weight: 500;
+          line-height: 32px;
+        }
+      }
+    }
+  }
+}
+
+// JSON View
+.json-view {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.json-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fef2f2;
+  border-bottom: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 12px;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.json-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--schema-editor-text-primary);
+  background: var(--schema-editor-bg);
+  tab-size: 2;
+  box-sizing: border-box;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+.fields-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+  min-height: 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  color: #94a3b8;
+  text-align: center;
+
+  mat-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  p {
+    font-size: 16px;
+    margin: 0;
+  }
+}
+
+.fields-list {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+
+  .field-wrapper {
+    margin-bottom: 4px;
+  }
+}
+
+.field-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--schema-editor-field-bg);
+  border-radius: var(--schema-editor-field-border-radius);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+
+  &:hover {
+    background: var(--schema-editor-field-bg-hover);
+    border-color: var(--schema-editor-border-color);
+  }
+
+  &:focus-within {
+    background: var(--schema-editor-field-bg-editing);
+    border-color: var(--schema-editor-accent-primary);
+  }
+
+  &.is-complex {
+    background: var(--schema-editor-field-bg-complex);
+
+    &:hover {
+      background: #fef9c3;
+    }
+
+    &:focus-within {
+      background: #fef3c7;
+      border-color: var(--schema-editor-accent-primary);
+    }
+  }
+}
+
+// Left section of field item
+.field-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+// Right section of field item
+.field-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+// Drag handle for reordering
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  color: #94a3b8;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #64748b;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+// Field wrapper for drag-drop
+.field-wrapper {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  // Ensure all mat-icon-button elements have consistent sizing
+  // This overrides Material defaults which may vary between applications
+  ::ng-deep {
+    .mat-mdc-icon-button {
+      width: 32px !important;
+      height: 32px !important;
+      padding: 4px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+
+      .mat-mdc-button-touch-target {
+        width: 32px !important;
+        height: 32px !important;
+      }
+
+      .mat-mdc-button-persistent-ripple {
+        border-radius: 50%;
+      }
+
+      mat-icon,
+      .mat-icon {
+        font-size: 20px !important;
+        width: 20px !important;
+        height: 20px !important;
+        line-height: 20px !important;
+        overflow: hidden !important;
+      }
+    }
+  }
+}
+
+// Custom drag preview - use ::ng-deep because CDK renders it outside component scope
+::ng-deep .drag-preview {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 12px 16px !important;
+  background: white !important;
+  border: 2px solid #3b82f6 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #1e293b !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+
+  mat-icon {
+    color: #3b82f6 !important;
+    font-size: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+// Explicit drag placeholder
+.drag-placeholder {
+  background: #e2e8f0;
+  border: 2px dashed var(--schema-editor-accent-primary);
+  border-radius: var(--schema-editor-field-border-radius);
+  min-height: 48px;
+  margin-bottom: 4px;
+
+  .placeholder-content {
+    height: 100%;
+    min-height: 48px;
+  }
+}
+
+// CDK Drag and Drop styles
+.cdk-drag-animating {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.cdk-drop-list-dragging .field-wrapper:not(.cdk-drag-placeholder) {
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.indent-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 2px;
+
+  .indent-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    transition: all 0.15s ease;
+
+    &:hover:not(:disabled) {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    &:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #64748b;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.expand-placeholder {
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.type-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.array-indicator {
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 14px;
+  margin-left: 2px;
+}
+
+.field-name-input {
+  flex: 0 0 auto;
+  width: 120px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  outline: none;
+  background: #f8fafc;
+  transition: all 0.15s ease;
+
+  &:focus {
+    border-color: #3b82f6;
+    background: white;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+}
+
+.required-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    color: #f59e0b;
+    background: #fef3c7;
+  }
+
+  &.is-required {
+    color: #f59e0b;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.label-input {
+  flex: 1;
+  font-size: 13px;
+  color: #64748b;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  outline: none;
+  background: #f8fafc;
+  min-width: 80px;
+  transition: all 0.15s ease;
+
+  &:focus {
+    border-color: #3b82f6;
+    background: white;
+  }
+
+  &::placeholder {
+    color: #94a3b8;
+    font-style: italic;
+  }
+}
+
+.type-selector,
+.display-type-selector {
+  width: 130px;
+  flex-shrink: 0;
+  margin-right: 4px;
+
+  ::ng-deep {
+    .mat-mdc-form-field-subscript-wrapper {
+      display: none !important;
+    }
+
+    .mdc-text-field--outlined {
+      height: 32px !important;
+    }
+
+    .mat-mdc-text-field-wrapper {
+      padding: 0 8px !important;
+      height: 32px !important;
+    }
+
+    .mat-mdc-form-field-flex {
+      height: 32px !important;
+    }
+
+    .mat-mdc-form-field-infix {
+      padding-top: 4px !important;
+      padding-bottom: 4px !important;
+      min-height: 28px !important;
+      height: 28px !important;
+    }
+
+    .mdc-notched-outline {
+      .mdc-notched-outline__leading,
+      .mdc-notched-outline__notch,
+      .mdc-notched-outline__trailing {
+        border-color: #e2e8f0 !important;
+      }
+    }
+
+    .mat-mdc-select {
+      font-size: 12px !important;
+    }
+
+    .mat-mdc-select-value-text {
+      font-size: 12px !important;
+    }
+
+    .mat-mdc-select-arrow-wrapper {
+      transform: scale(0.8);
+    }
+  }
+}
+
+.display-type-selector {
+  width: 120px;
+}
+
+.display-type-placeholder {
+  width: 120px;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+// Dropdown panel styles (rendered in CDK overlay outside component)
+::ng-deep .schema-editor-select-panel {
+  .mat-mdc-option {
+    font-size: 12px !important;
+    min-height: 36px !important;
+    padding: 0 12px !important;
+
+    .mdc-list-item__primary-text {
+      font-size: 12px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 8px !important;
+    }
+
+    mat-icon {
+      font-size: 16px !important;
+      width: 16px !important;
+      height: 16px !important;
+      margin-right: 0 !important;
+      color: #64748b;
+    }
+  }
+}
+
+.field-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+  width: 168px;
+  flex-shrink: 0;
+  margin-left: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .field-item:hover &,
+  .field-right:hover & {
+    opacity: 1;
+  }
+
+  button {
+    color: #64748b;
+
+    &:hover {
+      color: #1e293b;
+    }
+  }
+}
+
+.delete-action {
+  color: #ef4444 !important;
+
+  mat-icon {
+    color: #ef4444;
+  }
+}
+
+.nested-fields {
+  display: block;
+  min-height: 30px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  padding-left: 32px;
+  box-sizing: border-box;
+
+  .field-wrapper {
+    margin-bottom: 4px;
+  }
+
+  // Reduce margin for editors inside nested fields (container already has 32px padding)
+  .allowed-values-editor,
+  .default-value-editor,
+  .validators-editor {
+    margin-left: 16px;
+    margin-top: 8px;
+  }
+}
+
+.empty-nested {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-style: italic;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px dashed #e2e8f0;
+}
+
+// Allowed Values Editor
+.allowed-values-editor {
+  margin-left: 48px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  .values-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .values-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #166534;
+  }
+
+  .value-input {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #86efac;
+    border-radius: 4px;
+    outline: none;
+    background: white;
+
+    &:focus {
+      border-color: #22c55e;
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  .add-value-btn {
+    background: #22c55e;
+    border: none;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #16a34a;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .values-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .value-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: white;
+    border: 1px solid #86efac;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #166534;
+
+    .remove-value-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s ease;
+
+      &:hover {
+        color: #ef4444;
+      }
+
+      mat-icon {
+        font-size: 14px;
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+
+  .no-values {
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+  }
+}
+
+.field-actions {
+  .has-values {
+    color: #22c55e !important;
+  }
+
+  .has-default {
+    color: #8b5cf6 !important;
+  }
+
+  .has-validators {
+    color: #3b82f6 !important;
+  }
+}
+
+// Validators Editor
+.validators-editor {
+  margin-left: 48px;
+  margin-right: 12px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  box-sizing: border-box;
+  overflow: hidden;
+  width: calc(100% - 60px);
+
+  .validators-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .validators-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d4ed8;
+  }
+
+  .validators-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  .validator-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+
+    label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #3b82f6;
+    }
+
+    &.pattern-field {
+      flex: 1 1 auto;
+      min-width: 80px;
+      overflow: hidden;
+    }
+  }
+
+  .validator-input,
+  .validator-select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #93c5fd;
+    border-radius: 4px;
+    outline: none;
+    background: white;
+    width: 100px;
+    box-sizing: border-box !important;
+
+    &:focus {
+      border-color: #3b82f6;
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  .validator-select {
+    cursor: pointer;
+    width: 120px;
+  }
+
+  .pattern-field .validator-input {
+    width: 100%;
+    box-sizing: border-box !important;
+  }
+}
+
+// Default Value Editor
+.default-value-editor {
+  margin-left: 48px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  padding: 12px;
+  background: #f5f3ff;
+  border: 1px solid #c4b5fd;
+  border-radius: 8px;
+  box-sizing: border-box;
+
+  .default-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .default-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #6d28d9;
+  }
+
+  .default-input {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #a78bfa;
+    border-radius: 4px;
+    outline: none;
+    background: white;
+    max-width: 200px;
+
+    &:focus {
+      border-color: #8b5cf6;
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  .default-select {
+    padding: 6px 10px;
+    font-size: 13px;
+    border: 1px solid #a78bfa;
+    border-radius: 4px;
+    outline: none;
+    background: white;
+    cursor: pointer;
+
+    &:focus {
+      border-color: #8b5cf6;
+    }
+  }
+
+  .clear-default-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    transition: color 0.15s ease;
+
+    &:hover {
+      color: #ef4444;
+    }
+
+    mat-icon {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+    }
+  }
+}
+
