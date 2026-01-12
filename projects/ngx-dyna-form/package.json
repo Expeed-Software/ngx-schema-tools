@@ -2,6 +2,26 @@
   "name": "@expeed/ngx-dyna-form",
   "version": "1.0.0",
   "description": "Dynamic form component that renders forms from JSON Schema with x-display-type extensions",
+  "keywords": [
+    "angular",
+    "dynamic-form",
+    "json-schema",
+    "form-renderer",
+    "reactive-forms"
+  ],
+  "license": "Apache-2.0",
+  "author": "Expeed Software",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Expeed-Software/ngx-schema-tools.git"
+  },
+  "homepage": "https://github.com/Expeed-Software/ngx-schema-tools#readme",
+  "bugs": {
+    "url": "https://github.com/Expeed-Software/ngx-schema-tools/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "peerDependencies": {
     "@angular/common": "^21.0.0",
     "@angular/core": "^21.0.0",

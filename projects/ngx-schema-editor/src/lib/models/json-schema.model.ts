@@ -10,3 +10,11 @@ export type { JSONSchema7Definition };
 
 // Public API - simple alias for consumers
 export type JsonSchema = JSONSchema7;
+
+export function createEmptySchema(name: string): JsonSchema {
+  return {
+    type: 'object',
+    title: name,
+    properties: {},
+  };
+}

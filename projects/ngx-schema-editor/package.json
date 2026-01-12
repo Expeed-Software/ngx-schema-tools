@@ -1,6 +1,6 @@
 {
   "name": "@expeed/ngx-schema-editor",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Visual JSON Schema editor for Angular - create and edit schemas for dynamic form rendering",
   "keywords": [
     "angular",
@@ -14,11 +14,11 @@
   "author": "Expeed Software",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Expeed-Software/angular-data-mapper.git"
+    "url": "https://github.com/Expeed-Software/ngx-schema-tools.git"
   },
-  "homepage": "https://github.com/Expeed-Software/angular-data-mapper#readme",
+  "homepage": "https://github.com/Expeed-Software/ngx-schema-tools#readme",
   "bugs": {
-    "url": "https://github.com/Expeed-Software/angular-data-mapper/issues"
+    "url": "https://github.com/Expeed-Software/ngx-schema-tools/issues"
   },
   "publishConfig": {
     "access": "public"
