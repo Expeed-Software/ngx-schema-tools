@@ -20,7 +20,7 @@ These libraries work together to provide a complete schema-driven workflow:
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Schema Editor  │────▶│   Data Mapper   │────▶│   Dyna Form     │
+│  Schema Editor  │────▶│   Data Mapper   │────▶│   Dyna Form    │
 │                 │     │                 │     │                 │
 │ Create/Edit     │     │ Map fields      │     │ Render forms    │
 │ JSON Schemas    │     │ Transform data  │     │ from schemas    │
