@@ -1,6 +1,6 @@
 {
   "name": "@expeed/ngx-dyna-form",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Dynamic form component that renders forms from JSON Schema with x-display-type extensions",
   "keywords": [
     "angular",
