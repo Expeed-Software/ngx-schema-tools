@@ -985,6 +985,9 @@ export class SchemaEditorComponent {
       // Sync JSON text from current schema state
       this.jsonText.set(JSON.stringify(this.toJsonSchema(), null, 2));
       this.jsonError.set(null);
+    } else if (mode === 'visual' && this.viewMode() === 'json') {
+      // Apply JSON changes when switching back to visual view
+      this.applyJsonChanges();
     }
     this.viewMode.set(mode);
   }

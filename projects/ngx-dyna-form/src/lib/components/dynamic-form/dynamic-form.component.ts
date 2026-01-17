@@ -676,7 +676,7 @@ export class DynamicFormComponent implements OnDestroy {
     }
 
     // Handle multiselect and tags (arrays of primitives)
-    if (field.displayType === 'multiselect' || field.displayType === 'tags') {
+    if (field.displayType === 'multiselect' || field.displayType === 'multiselect-dropdown' || field.displayType === 'tags') {
       const arrayValue = (value as unknown[]) || [];
       return new FormControl(arrayValue, validators);
     }
@@ -850,7 +850,7 @@ export class DynamicFormComponent implements OnDestroy {
       }
 
       // Handle array of enums/oneOf (multiselect)
-      if (displayType === 'multiselect' && prop.items) {
+      if ((displayType === 'multiselect' || displayType === 'multiselect-dropdown') && prop.items) {
         field.options = this.parseOptions(prop.items);
       }
 

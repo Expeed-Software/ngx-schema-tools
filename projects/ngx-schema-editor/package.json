@@ -1,6 +1,6 @@
 {
   "name": "@expeed/ngx-schema-editor",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Visual JSON Schema editor for Angular - create and edit schemas for dynamic form rendering",
   "keywords": [
     "angular",
