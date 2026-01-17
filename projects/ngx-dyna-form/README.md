@@ -258,6 +258,49 @@ const schema: DynamicFormSchema = {
 };
 ```
 
+## Allowed Values (Enum/OneOf)
+
+Define allowed values for dropdowns, radio buttons, and multiselect fields:
+
+```typescript
+// Simple enum - values are used as both value and label
+{
+  type: 'string',
+  title: 'Size',
+  enum: ['small', 'medium', 'large'],
+  'x-display-type': 'dropdown'
+}
+
+// Labeled values using oneOf - separate value and display label
+{
+  type: 'string',
+  title: 'Size',
+  oneOf: [
+    { const: 'sm', title: 'Small' },
+    { const: 'md', title: 'Medium' },
+    { const: 'lg', title: 'Large' }
+  ],
+  'x-display-type': 'dropdown'
+}
+
+// Multiselect with labeled values
+{
+  type: 'array',
+  title: 'Categories',
+  items: {
+    type: 'string',
+    oneOf: [
+      { const: 'tech', title: 'Technology' },
+      { const: 'health', title: 'Healthcare' },
+      { const: 'finance', title: 'Finance' }
+    ]
+  },
+  'x-display-type': 'multiselect'
+}
+```
+
+The `oneOf` format allows the form to display user-friendly labels while storing machine-readable values.
+
 ## Nested Objects
 
 Nested objects render as fieldsets:
