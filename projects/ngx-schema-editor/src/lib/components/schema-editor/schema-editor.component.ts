@@ -23,7 +23,7 @@ import { AllowedValue, isLabeledValue, parseOneOf, toOneOf, hasLabeledValues } f
 import { FieldItemComponent, EditorField } from './field-item/field-item.component';
 
 // Display type options for form rendering
-type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle';
+type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle' | 'radio' | 'multiselect' | 'multiselect-dropdown' | 'tags';
 
 @Component({
   selector: 'schema-editor',
@@ -47,15 +47,27 @@ type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicke
 })
 export class SchemaEditorComponent {
   private appRef = inject(ApplicationRef);
+  private currentSchemaTitle = signal<string | null>(null);
 
   @Input() set schema(value: JsonSchema | null) {
     if (value) {
-      // Don't overwrite fields if we have uncommitted changes (fields with editors open, empty names, or expanded)
+      const newTitle = value.title || 'New Schema';
+      const isNewSchema = this.currentSchemaTitle() !== newTitle;
+
+      // If switching to a different schema, always load the new fields
+      if (isNewSchema) {
+        this.currentSchemaTitle.set(newTitle);
+        this.schemaName.set(newTitle);
+        this.fields.set(this.jsonSchemaToEditorFields(value));
+        return;
+      }
+
+      // Same schema - don't overwrite fields if we have uncommitted changes
       const hasUncommittedChanges = this.fields().some(f =>
         f.isEditingDefault || f.isEditingValues || f.isEditingValidators || !f.name || f.expanded
       ) || this.hasUncommittedChildFields(this.fields());
 
-      this.schemaName.set(value.title || 'New Schema');
+      this.schemaName.set(newTitle);
 
       if (!hasUncommittedChanges) {
         this.fields.set(this.jsonSchemaToEditorFields(value));
@@ -677,18 +689,28 @@ export class SchemaEditorComponent {
 
   private jsonSchemaPropertyToEditorField(name: string, schema: JsonSchema, isRequired: boolean): EditorField {
     const fieldType = this.jsonSchemaTypeToEditorType(schema);
-    // Set displayType for string, number, boolean, date, and time fields
+    // Set displayType for string, number, boolean, date, time, and array fields
     let displayType: DisplayType | undefined;
+    const xDisplayType = (schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined;
     if (fieldType === 'string') {
-      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'textbox';
+      displayType = xDisplayType || 'textbox';
     } else if (fieldType === 'number') {
-      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'textbox';
+      displayType = xDisplayType || 'textbox';
     } else if (fieldType === 'boolean') {
-      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'checkbox';
+      displayType = xDisplayType || 'checkbox';
     } else if (fieldType === 'date') {
-      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'datepicker';
+      displayType = xDisplayType || 'datepicker';
     } else if (fieldType === 'time') {
-      displayType = ((schema as Record<string, unknown>)['x-display-type'] as DisplayType | undefined) || 'timepicker';
+      displayType = xDisplayType || 'timepicker';
+    } else if (fieldType === 'array') {
+      // For arrays, check if items are primitive (not object) to set display type
+      const items = schema.items;
+      if (items && typeof items !== 'boolean' && !Array.isArray(items)) {
+        const itemType = items.type;
+        if (itemType !== 'object') {
+          displayType = xDisplayType || 'tags';
+        }
+      }
     }
 
     // Preserve format for string types and date types
@@ -729,6 +751,9 @@ export class SchemaEditorComponent {
 
         if (schema.items.type === 'object' && schema.items.properties) {
           field.children = this.jsonSchemaToEditorFields(schema.items, schema.items.required);
+        } else {
+          // Parse allowed values from items for multiselect
+          field.allowedValues = this.parseAllowedValues(schema.items);
         }
       }
     }
@@ -855,7 +880,16 @@ export class SchemaEditorComponent {
         schema['items'] = { type: 'string', format: 'time' };
       } else {
         // Primitive types (string, number, boolean)
-        schema['items'] = { type: itemType };
+        const items: Record<string, unknown> = { type: itemType };
+        // Add allowed values to items for multiselect
+        if (field.allowedValues && field.allowedValues.length > 0) {
+          if (hasLabeledValues(field.allowedValues)) {
+            items['oneOf'] = toOneOf(field.allowedValues);
+          } else {
+            items['enum'] = field.allowedValues;
+          }
+        }
+        schema['items'] = items;
       }
     } else if (field.type === 'object') {
       schema['type'] = 'object';
@@ -888,8 +922,8 @@ export class SchemaEditorComponent {
       schema['title'] = field.label;
     }
 
-    // Add enum for allowed values
-    if (field.allowedValues && field.allowedValues.length > 0) {
+    // Add enum for allowed values (not for arrays - those go on items)
+    if (field.allowedValues && field.allowedValues.length > 0 && field.type !== 'array') {
       if (hasLabeledValues(field.allowedValues)) {
         // Use oneOf with const and title for labeled values
         schema['oneOf'] = toOneOf(field.allowedValues);

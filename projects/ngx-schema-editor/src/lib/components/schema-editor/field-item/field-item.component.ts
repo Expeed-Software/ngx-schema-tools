@@ -27,7 +27,7 @@ export type { AllowedValue, LabeledValue } from '../models/allowed-value.model';
 export { isLabeledValue } from '../models/allowed-value.model';
 
 // Display type options for form rendering
-type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle';
+type DisplayType = 'textbox' | 'dropdown' | 'textarea' | 'richtext' | 'datepicker' | 'datetimepicker' | 'timepicker' | 'stepper' | 'checkbox' | 'toggle' | 'radio' | 'multiselect' | 'multiselect-dropdown' | 'tags';
 
 // Item types for arrays
 type ArrayItemType = 'string' | 'number' | 'boolean' | 'date' | 'time' | 'object';
@@ -116,6 +116,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
   stringDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
     { value: 'textbox', label: 'Textbox', icon: 'edit' },
     { value: 'dropdown', label: 'Dropdown', icon: 'arrow_drop_down_circle' },
+    { value: 'radio', label: 'Radio Buttons', icon: 'radio_button_checked' },
     { value: 'textarea', label: 'Textarea', icon: 'notes' },
     { value: 'richtext', label: 'Rich Text', icon: 'format_color_text' },
   ];
@@ -141,6 +142,13 @@ export class FieldItemComponent implements OnInit, OnChanges {
     { value: 'toggle', label: 'Toggle', icon: 'toggle_on' },
   ];
 
+  // Array display types (for arrays of primitives)
+  arrayDisplayTypes: Array<{ value: DisplayType; label: string; icon: string }> = [
+    { value: 'tags', label: 'Tags', icon: 'sell' },
+    { value: 'multiselect', label: 'Checkboxes', icon: 'checklist' },
+    { value: 'multiselect-dropdown', label: 'Multi-select Dropdown', icon: 'arrow_drop_down_circle' },
+  ];
+
   stringFormats: Array<{ value: string; label: string }> = [
     { value: '', label: '(none)' },
     { value: 'email', label: 'Email' },
@@ -156,11 +164,12 @@ export class FieldItemComponent implements OnInit, OnChanges {
   getValueDisplay = getDisplayText;
   getRawValue = getRawValue;
 
-  getDisplayTypes(fieldType: string): Array<{ value: DisplayType; label: string; icon: string }> {
+  getDisplayTypes(fieldType: string, itemType?: string): Array<{ value: DisplayType; label: string; icon: string }> {
     if (fieldType === 'date') return this.dateDisplayTypes;
     if (fieldType === 'time') return this.timeDisplayTypes;
     if (fieldType === 'number') return this.numberDisplayTypes;
     if (fieldType === 'boolean') return this.booleanDisplayTypes;
+    if (fieldType === 'array' && itemType && itemType !== 'object') return this.arrayDisplayTypes;
     return this.stringDisplayTypes;
   }
 
@@ -278,6 +287,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
     else if (type === 'boolean') this.field.displayType = 'checkbox';
     else if (type === 'date') this.field.displayType = 'datepicker';
     else if (type === 'time') this.field.displayType = 'timepicker';
+    else if (type === 'array' && this.field.itemType !== 'object') this.field.displayType = 'tags';
     else this.field.displayType = undefined;
 
     // Clear allowed values when type changes (they become invalid)
@@ -296,9 +306,15 @@ export class FieldItemComponent implements OnInit, OnChanges {
       if (!this.field.children) {
         this.field.children = [];
       }
+      // No display type for object arrays (they show nested fields)
+      this.field.displayType = undefined;
     } else {
       // Clear children for primitive item types
       this.field.children = undefined;
+      // Set default display type for primitive arrays
+      if (!this.field.displayType || this.field.displayType === 'tags' || this.field.displayType === 'multiselect') {
+        this.field.displayType = 'tags';
+      }
     }
     this.fieldChange.emit();
   }
@@ -463,6 +479,8 @@ export class FieldItemComponent implements OnInit, OnChanges {
       this.field.isEditingDefault = false;
       this.field.isEditingValidators = false;
       if (!this.field.allowedValues) this.field.allowedValues = [];
+      // Pre-select labeled mode if existing values are labeled
+      this.newValueLabeled = this.field.allowedValues.some(v => this.isLabeledValue(v));
     }
     this.fieldChange.emit();
   }
@@ -500,7 +518,14 @@ export class FieldItemComponent implements OnInit, OnChanges {
       if (!this.field.allowedValues) this.field.allowedValues = [];
       this.field.allowedValues.push(newValue);
       valueInput.value = '';
-      if (labelInput) labelInput.value = '';
+      if (labelInput) {
+        labelInput.value = '';
+        // Focus label input for next entry when in labeled mode
+        if (this.newValueLabeled) {
+          labelInput.focus();
+        }
+      }
+      this.fieldChange.emit();
     }
   }
 
@@ -508,6 +533,7 @@ export class FieldItemComponent implements OnInit, OnChanges {
     if (this.field.allowedValues) {
       this.field.allowedValues.splice(index, 1);
       if (this.field.allowedValues.length === 0) this.field.allowedValues = undefined;
+      this.fieldChange.emit();
     }
   }
 

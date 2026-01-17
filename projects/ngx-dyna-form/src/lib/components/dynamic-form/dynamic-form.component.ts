@@ -49,6 +49,14 @@ export interface DynamicFormSchema {
 }
 
 /**
+ * Option with optional label for dropdowns
+ */
+export interface FormFieldOption {
+  value: string | number;
+  label: string;
+}
+
+/**
  * Internal form field representation
  */
 export interface FormField {
@@ -57,7 +65,7 @@ export interface FormField {
   type: string;
   displayType: string;
   required: boolean;
-  options?: string[];
+  options?: FormFieldOption[];
   min?: number;
   max?: number;
   minLength?: number;
@@ -197,14 +205,14 @@ export interface FormField {
           }
           @case ('radio') {
             <div class="form-field__radio-group">
-              @for (option of field.options; track option) {
+              @for (option of field.options; track option.value) {
                 <label class="form-field__radio">
                   <input
                     type="radio"
                     [formControlName]="field.name"
-                    [value]="option"
+                    [value]="option.value"
                   />
-                  <span class="form-field__radio-label">{{ option }}</span>
+                  <span class="form-field__radio-label">{{ option.label }}</span>
                 </label>
               }
             </div>
@@ -274,22 +282,52 @@ export interface FormField {
               [formControlName]="field.name"
             >
               <option value="">Select {{ field.label }}</option>
-              @for (option of field.options; track option) {
-                <option [value]="option">{{ option }}</option>
+              @for (option of field.options; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
           }
           @case ('multiselect') {
             <div class="form-field__multiselect">
-              @for (option of field.options; track option) {
+              @for (option of field.options; track option.value) {
                 <label class="form-field__multiselect-option">
                   <input
                     type="checkbox"
-                    [checked]="isOptionSelected(field.name, option, formGroup)"
-                    (change)="toggleMultiselectOption(field.name, option, formGroup)"
+                    [checked]="isOptionSelected(field.name, option.value, formGroup)"
+                    (change)="toggleMultiselectOption(field.name, option.value, formGroup)"
                   />
-                  <span>{{ option }}</span>
+                  <span>{{ option.label }}</span>
                 </label>
+              }
+            </div>
+          }
+          @case ('multiselect-dropdown') {
+            <div class="form-field__multiselect-dropdown" [class.open]="isDropdownOpen(field.name)">
+              <button
+                type="button"
+                class="multiselect-dropdown__trigger"
+                (click)="toggleDropdown(field.name)"
+              >
+                <span class="multiselect-dropdown__text">
+                  {{ getMultiselectDisplayText(field, formGroup) }}
+                </span>
+                <svg class="multiselect-dropdown__arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              @if (isDropdownOpen(field.name)) {
+                <div class="multiselect-dropdown__panel">
+                  @for (option of field.options; track option.value) {
+                    <label class="multiselect-dropdown__option">
+                      <input
+                        type="checkbox"
+                        [checked]="isOptionSelected(field.name, option.value, formGroup)"
+                        (change)="toggleMultiselectOption(field.name, option.value, formGroup)"
+                      />
+                      <span>{{ option.label }}</span>
+                    </label>
+                  }
+                </div>
               }
             </div>
           }
@@ -445,8 +483,8 @@ export interface FormField {
           @case ('select') {
             <select class="form-field__select" [formControlName]="field.name">
               <option value="">Select {{ field.label }}</option>
-              @for (option of field.options; track option) {
-                <option [value]="option">{{ option }}</option>
+              @for (option of field.options; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
           }
@@ -499,6 +537,9 @@ export interface FormField {
 export class DynamicFormComponent implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly destroy$ = new Subject<void>();
+
+  // Track open dropdown states
+  private openDropdowns = new Set<string>();
 
   // Inputs
   readonly schema = input<DynamicFormSchema | null>(null);
@@ -784,7 +825,7 @@ export class DynamicFormComponent implements OnDestroy {
         type,
         displayType,
         required: required.includes(name),
-        options: prop.enum as string[],
+        options: this.parseOptions(prop),
         min: prop.minimum,
         max: prop.maximum,
         minLength: prop.minLength,
@@ -808,9 +849,9 @@ export class DynamicFormComponent implements OnDestroy {
         field.itemRequired = prop.items.required || [];
       }
 
-      // Handle array of enums (multiselect)
-      if (displayType === 'multiselect' && prop.items?.enum) {
-        field.options = prop.items.enum as string[];
+      // Handle array of enums/oneOf (multiselect)
+      if (displayType === 'multiselect' && prop.items) {
+        field.options = this.parseOptions(prop.items);
       }
 
       fields.push(field);
@@ -829,8 +870,9 @@ export class DynamicFormComponent implements OnDestroy {
     if (prop.format === 'email') return 'email';
     if (prop.format === 'uri' || prop.format === 'url') return 'url';
 
-    // Check for enum (select)
+    // Check for enum or oneOf (select)
     if (prop.enum && prop.enum.length > 0) return 'select';
+    if (this.hasOneOfOptions(prop)) return 'select';
 
     // Check type
     if (type === 'boolean') return 'checkbox';
@@ -841,8 +883,9 @@ export class DynamicFormComponent implements OnDestroy {
 
     // Handle array type
     if (type === 'array' && prop.items) {
-      // Array of enums = multiselect
+      // Array of enums or oneOf = multiselect
       if (prop.items.enum && prop.items.enum.length > 0) return 'multiselect';
+      if (this.hasOneOfOptions(prop.items)) return 'multiselect';
       // Array of objects = repeatable fieldset
       if (prop.items.type === 'object' && prop.items.properties) return 'array-objects';
       // Array of primitives = tags
@@ -850,6 +893,48 @@ export class DynamicFormComponent implements OnDestroy {
     }
 
     return 'textbox';
+  }
+
+  /**
+   * Check if schema has oneOf with const values (labeled options)
+   */
+  private hasOneOfOptions(schema: DynamicFormSchema): boolean {
+    const oneOf = schema['oneOf'] as DynamicFormSchema[] | undefined;
+    if (!oneOf || !Array.isArray(oneOf) || oneOf.length === 0) return false;
+    // Check if at least one item has 'const'
+    return oneOf.some(item => item && typeof item === 'object' && 'const' in item);
+  }
+
+  /**
+   * Parse options from enum or oneOf format
+   */
+  private parseOptions(schema: DynamicFormSchema): FormFieldOption[] | undefined {
+    // Handle simple enum
+    if (schema.enum && Array.isArray(schema.enum) && schema.enum.length > 0) {
+      return schema.enum.map(value => ({
+        value: value as string | number,
+        label: String(value),
+      }));
+    }
+
+    // Handle oneOf with const/title (labeled values)
+    const oneOf = schema['oneOf'] as DynamicFormSchema[] | undefined;
+    if (oneOf && Array.isArray(oneOf) && oneOf.length > 0) {
+      const options: FormFieldOption[] = [];
+      for (const item of oneOf) {
+        if (item && typeof item === 'object' && 'const' in item) {
+          const constValue = item['const'] as string | number;
+          const title = item.title as string | undefined;
+          options.push({
+            value: constValue,
+            label: title || String(constValue),
+          });
+        }
+      }
+      if (options.length > 0) return options;
+    }
+
+    return undefined;
   }
 
   private formatLabel(name: string): string {
@@ -935,17 +1020,17 @@ export class DynamicFormComponent implements OnDestroy {
   // Multiselect Operations
   // ===========================================================================
 
-  isOptionSelected(fieldName: string, option: string, formGroup: FormGroup): boolean {
+  isOptionSelected(fieldName: string, option: string | number, formGroup: FormGroup): boolean {
     const control = formGroup.get(fieldName);
-    const values = (control?.value as string[]) || [];
+    const values = (control?.value as (string | number)[]) || [];
     return values.includes(option);
   }
 
-  toggleMultiselectOption(fieldName: string, option: string, formGroup: FormGroup): void {
+  toggleMultiselectOption(fieldName: string, option: string | number, formGroup: FormGroup): void {
     const control = formGroup.get(fieldName);
     if (!control) return;
 
-    const values = [...((control.value as string[]) || [])];
+    const values = [...((control.value as (string | number)[]) || [])];
     const index = values.indexOf(option);
 
     if (index > -1) {
@@ -956,6 +1041,40 @@ export class DynamicFormComponent implements OnDestroy {
 
     control.setValue(values);
     control.markAsTouched();
+  }
+
+  // ===========================================================================
+  // Multiselect Dropdown Operations
+  // ===========================================================================
+
+  isDropdownOpen(fieldName: string): boolean {
+    return this.openDropdowns.has(fieldName);
+  }
+
+  toggleDropdown(fieldName: string): void {
+    if (this.openDropdowns.has(fieldName)) {
+      this.openDropdowns.delete(fieldName);
+    } else {
+      // Close other dropdowns
+      this.openDropdowns.clear();
+      this.openDropdowns.add(fieldName);
+    }
+  }
+
+  getMultiselectDisplayText(field: FormField, formGroup: FormGroup): string {
+    const control = formGroup.get(field.name);
+    const values = (control?.value as (string | number)[]) || [];
+
+    if (values.length === 0) {
+      return `Select ${field.label}...`;
+    }
+
+    if (values.length === 1 && field.options) {
+      const option = field.options.find(o => o.value === values[0]);
+      return option?.label || String(values[0]);
+    }
+
+    return `${values.length} selected`;
   }
 
   // ===========================================================================

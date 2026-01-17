@@ -111,10 +111,10 @@
 
       <!-- Display Type Selector -->
       @if (showDisplayType) {
-        @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time') {
+        @if (field.type === 'string' || field.type === 'number' || field.type === 'boolean' || field.type === 'date' || field.type === 'time' || (field.type === 'array' && field.itemType && field.itemType !== 'object')) {
           <mat-form-field appearance="outline" class="display-type-selector" matTooltip="Display Type">
             <mat-select [value]="field.displayType" (selectionChange)="onDisplayTypeChange($event.value)" panelClass="schema-editor-select-panel">
-              @for (dt of getDisplayTypes(field.type); track dt.value) {
+              @for (dt of getDisplayTypes(field.type, field.itemType); track dt.value) {
                 <mat-option [value]="dt.value">
                   <mat-icon>{{ dt.icon }}</mat-icon>
                   {{ dt.label }}
@@ -138,7 +138,7 @@
             <mat-icon>add_circle_outline</mat-icon>
           </button>
         }
-        @if (field.type === 'string' || field.type === 'number') {
+        @if (field.type === 'string' || field.type === 'number' || (field.type === 'array' && (field.displayType === 'multiselect' || field.displayType === 'multiselect-dropdown'))) {
           <button
             mat-icon-button
             (click)="toggleValuesEditor()"
@@ -190,7 +190,7 @@
   </div>
 
   <!-- Allowed Values Editor -->
-  @if (field.isEditingValues && (field.type === 'string' || field.type === 'number')) {
+  @if (field.isEditingValues && (field.type === 'string' || field.type === 'number' || (field.type === 'array' && (field.displayType === 'multiselect' || field.displayType === 'multiselect-dropdown')))) {
     <div class="allowed-values-editor">
       <div class="values-header">
         <span class="values-label">Allowed values:</span>
