@@ -169,6 +169,59 @@ submit(): void {
 | `isValid()` | `boolean` | Check if form is valid |
 | `markAllTouched()` | `void` | Mark all fields as touched |
 
+## Schema Reference
+
+The `DynamicFormSchema` follows JSON Schema (draft 2020-12) with `x-display-type` extension:
+
+```typescript
+interface DynamicFormSchema {
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array';
+  title?: string;                    // Field label
+  description?: string;              // Help text shown below field
+  default?: unknown;                 // Default value
+
+  // Object properties
+  properties?: Record<string, DynamicFormSchema>;
+  required?: string[];               // Required field names
+
+  // Array properties
+  items?: DynamicFormSchema;         // Schema for array items
+  minItems?: number;
+  maxItems?: number;
+
+  // String constraints
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;                  // Regex pattern
+  format?: 'email' | 'uri' | 'url' | 'date' | 'date-time' | 'time';
+
+  // Number constraints
+  minimum?: number;
+  maximum?: number;
+
+  // Allowed values
+  enum?: unknown[];                  // Simple values
+  oneOf?: Array<{ const: unknown; title?: string }>;  // Labeled values
+
+  // Display hint
+  'x-display-type'?: string;         // See Display Types table
+}
+```
+
+**Note:** For arrays with enum options (multiselect), place `enum`/`oneOf` on `items` and `x-display-type` on the array:
+
+```typescript
+{
+  type: 'array',
+  title: 'Colors',
+  'x-display-type': 'multiselect',  // Display type on array
+  items: {
+    type: 'string',
+    enum: ['red', 'green', 'blue']   // Options on items
+  }
+}
+```
+
 ## Display Types
 
 Control how fields are rendered using `x-display-type`:
