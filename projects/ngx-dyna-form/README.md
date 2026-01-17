@@ -6,7 +6,7 @@ A dynamic form renderer for Angular that builds reactive forms from JSON Schema 
 
 - **JSON Schema-Driven**: Automatically render forms from JSON Schema
 - **Display Type Hints**: Use `x-display-type` to control input rendering
-- **Multiple Input Types**: textbox, textarea, richtext, datepicker, dropdown, radio, checkbox, toggle, stepper, tags, multiselect
+- **Multiple Input Types**: textbox, textarea, richtext, datepicker, dropdown, radio, checkbox, toggle, stepper, tags, multiselect, multiselect-dropdown
 - **Rich Text Editor**: Quill integration for HTML content editing
 - **Nested Objects**: Render nested object properties as fieldsets
 - **Array Support**: Dynamic arrays with add/remove functionality
@@ -179,12 +179,16 @@ Control how fields are rendered using `x-display-type`:
 | `textarea` | Multi-line text input | string |
 | `richtext` | Quill rich text editor | string |
 | `dropdown` | Select dropdown | string (enum) |
+| `radio` | Radio button group | string (enum) |
 | `datepicker` | Date picker | date |
 | `datetimepicker` | Date and time picker | date |
 | `timepicker` | Time picker | time |
 | `stepper` | Number stepper with +/- | number |
 | `checkbox` | Checkbox | boolean |
 | `toggle` | Toggle switch | boolean |
+| `multiselect` | Checkbox group | array (enum) |
+| `multiselect-dropdown` | Dropdown with checkboxes | array (enum) |
+| `tags` | Tag input | array (string) |
 
 ### Auto-Inferred Display Types
 
@@ -363,8 +367,8 @@ export { FormField } from './lib/components/dynamic-form/dynamic-form.component'
 
 ## Requirements
 
-- Angular 19+
-- ngx-quill 26+ (for rich text)
+- Angular 21+
+- ngx-quill 30+ (for rich text)
 - Quill 2.0+
 
 ## License

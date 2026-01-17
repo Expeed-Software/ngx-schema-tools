@@ -158,12 +158,16 @@ The editor supports the `x-display-type` extension property to hint how fields s
 | `textarea` | String | Multi-line text input |
 | `richtext` | String | Rich text editor (HTML) |
 | `dropdown` | String (enum) | Select dropdown |
+| `radio` | String (enum) | Radio button group |
 | `datepicker` | Date | Date picker |
 | `datetimepicker` | Date | Date and time picker |
 | `timepicker` | Time | Time picker |
 | `stepper` | Number | Number stepper with +/- buttons |
 | `checkbox` | Boolean | Checkbox |
 | `toggle` | Boolean | Toggle switch |
+| `multiselect` | Array (enum) | Checkbox group for multiple selection |
+| `multiselect-dropdown` | Array (enum) | Dropdown with checkboxes for multiple selection |
+| `tags` | Array (string) | Tag input for string arrays |
 
 **Note:** Email and URL fields use `format` (email, uri) in JSON Schema. The form renderer auto-infers the appropriate input type from the format.
 
@@ -230,15 +234,11 @@ export { LabeledValue } from './lib/models/labeled-value.model';
 export { isLabeledValue, getRawValue, getDisplayText } from './lib/utils/allowed-value.utils';
 ```
 
-## Known Limitations
-
-- **Array allowed values**: Currently, allowed values (enum) cannot be set for array items via the UI. To create a multiselect field (array with enum options), you need to manually edit the JSON schema to add `items.enum`. This is planned for a future release.
-
 ## Requirements
 
-- Angular 19+
-- Angular Material 19+
-- Angular CDK 19+
+- Angular 21+
+- Angular Material 21+
+- Angular CDK 21+
 
 ## License
 
